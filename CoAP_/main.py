@@ -2,7 +2,9 @@ import socket
 import sys
 import select
 import threading
-from queue import *
+import bitarray.util as ut
+from enum import Enum
+from queue import Queue
 from bitarray import *
 from numpy import floor
 
@@ -14,13 +16,18 @@ max_up_size = 1024  #max udp payload size
 running = False
 req_q1 = Queue(0)  #request queue1
 req_q2 = Queue(0)  #request queue2
+
+class Msg_type(Enum):
+    Request=1
+    Response=2
+
 #todo check if need prior queue
-upload_collection =[[[]]]  #todo
 
+upload_collection =[[[]]]  #todo data class
 
-class Request:
-    def __init__(self, raw_request):
-        self.oper_param = int
+class Message:
+    def __init__(self, msg_type):
+        self.oper_param = str
         self.ord_no = int
         self.op_code = int
         self.options = None
@@ -33,10 +40,20 @@ class Request:
         self.version = int
         self.raw_request = bitarray()
         self.is_valid = False
-        bitarray.frombytes(self.raw_request, raw_request)
-        self.disassemble_req()
+        self.msg_type=msg_type
 
-    def disassemble_req(self):
+    #Request specific method
+    def set_raw_data(self, raw_request):
+        bitarray.frombytes(self.raw_request, raw_request)
+        self.__disassemble_req()
+
+    #Response specific method
+    def get_raw_data(self):
+        #todo continue
+        self.__assemble_resp()
+        return self.raw_request.tobytes()
+
+    def __disassemble_req(self):
         #obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a doua optiuni:
         #8 - location-Path -> ascii encode
         #12 - content-format -> ascii encode
@@ -52,6 +69,7 @@ class Request:
         idx = 32
         self.token = 0
 
+        #for token
         if self.tkn_length > 0:
             idx = (32 + self.tkn_length * 8)
             self.token = bits_to_int(self.raw_request[32:idx])
@@ -61,6 +79,7 @@ class Request:
         prev_option_number = 0
         option_nr = 0
 
+        #for options
         while bits_to_int(self.raw_request[idx:idx + 8]) != int(0xFF) and option_nr < 2:
             option_number = bits_to_int(self.raw_request[idx:idx + 4]) + prev_option_number
             prev_option_number = option_number
@@ -70,12 +89,23 @@ class Request:
             idx = idx + (option_length + 1) * 8
             option_nr += 1
 
+        #for coap payload
         if bits_to_int(self.raw_request[idx:idx + 8]) == int(0xFF):
             self.is_valid=True
             idx += 8
             self.op_code = bits_to_int(self.raw_request[idx:idx + 3])
             self.ord_no = bits_to_int(self.raw_request[idx + 3:idx + 19])
-            self.oper_param = bits_to_int(self.raw_request[idx + 19:])
+            self.oper_param = (self.raw_request[idx + 19:]).tobytes().decode("utf-8")
+
+    def __assemble_resp(self):
+        # todo not good now
+        bitarray.frombytes(self.raw_request, int_to_bytes(self.version, 1))
+        ut.strip(self.raw_request, "left")
+        part = bitarray()
+        bitarray.frombytes(part, int_to_bytes(self.type, 1))
+        ut.strip(part, "left")
+        self.raw_request += part
+        # todo continue
 
     def __repr__(self):
         if self.is_valid:
@@ -101,18 +131,23 @@ def main_th_fct():
             #todo de intrebat rol
         else:
             data_rcv, address = soc.recvfrom(max_up_size)
-            new_request = Request(data_rcv)
+            new_request = Message(Msg_type.Request)
+            new_request.set_raw_data(data_rcv)
             req_q1.put(new_request)
             #todo awake serv_th1
             print("RECEIVED ===> ", new_request, " <=== FROM: ", address)
             #print("cnt= ", counter)
 
 
-def bits_to_int(param):
-    if len(param) % 8 != 0:
-        param=bitarray("0"*(int(floor((len(param)/8)+1)*8)-len(param)))+param
+def int_to_bytes(value,length):
+    return int(value).to_bytes(byteorder="big", signed=False, length=length)
+
+def bits_to_int(value):
+    if len(value) % 8 != 0:
+        value= bitarray("0" * (int(floor((len(value) / 8) + 1) * 8) - len(value))) + value
         #print("param=> " + str(param))
-    return int.from_bytes(param.tobytes(), "big")
+    return int.from_bytes(value.tobytes(), "big")
+
 
 """ 
 def service_th1_fct():  
@@ -126,7 +161,7 @@ def service_th2_fct():
 
 
 def sintatic_analizer(params):  
-    #TODO
+    #todo va face check pe response si pe request sa vada ca sunt corecte
     pass
 
 
@@ -138,16 +173,10 @@ def deduplicator(params):
 def request_processor(params):  
     #TODO
     pass
-
-
-def assemble_req(params):  
-    #todo
-    pass
 """
 
 if __name__ == '__main__':
     # todo awake and sleep mecans for threads
-    # todo control comands for basic terminal
     # todo colectie care contine toate thread urile petru join sau alte necesitati
 
     if len(sys.argv) != 4:
@@ -157,6 +186,7 @@ if __name__ == '__main__':
         print("  --s_ip=send ip ")
         sys.exit()
 
+    #todo de intrebat primit data request de oriunde, orice ip sau primit prin parametri
     for arg in sys.argv:
         if arg.startswith("--r_port"):
             temp, r_port = arg.split("=")
@@ -181,6 +211,7 @@ if __name__ == '__main__':
         sys.exit()
 
     while True:
+        # todo control comands for basic terminal
         try:
             useless = input("Send: ")
             test_data = bitarray('01101101 01100101 01110011 01100001 01101010 00100000 01101101 01100101 01110011')
