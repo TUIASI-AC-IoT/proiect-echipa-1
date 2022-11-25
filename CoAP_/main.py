@@ -1,8 +1,8 @@
 import socket
 import sys
 import threading
-from enum import Enum
-from queue import Queue
+from threading import Lock
+from enum import Enum, auto
 from typing import TypeAlias
 
 import bitarray.util as ut
@@ -16,15 +16,24 @@ from numpy import floor
 # variabile diverse
 max_up_size = 1024  # max udp payload size
 running = False
-req_q1 = Queue(0)  # request queue1
-req_q2 = Queue(0)  # request queue2
+lock_q1 = Lock()
+lock_q2 = Lock()
+req_q1: list['Message'] = list()  # request queue1
+req_q2: list['Message'] = list()  # request queue2
 
 Token: TypeAlias = int
 
 
+class Type(Enum):
+    Request = auto()
+    Response = auto()
+
+
 class MsgType(Enum):
-    Request = 1
-    Response = 2
+    CON = 0
+    NON = 1
+    ACK = 2
+    RESET = 3
 
 
 # todo check if need prior queue
@@ -160,7 +169,7 @@ def main_th_fct():
             # todo de intrebat rol
         else:
             data_rcv, address = soc.recvfrom(max_up_size)
-            new_request = Message(MsgType.Request)
+            new_request = Message(Type.Request)
             new_request.set_raw_data(data_rcv)
             req_q1.put(new_request)
             # todo awake serv_th1
@@ -179,6 +188,17 @@ def bits_to_int(value):
     return int.from_bytes(value.tobytes(), "big")
 
 
+# todo continue deduplicator
+def deduplicator(msg: Message):
+    if msg.type == MsgType.CON:
+        print('send ack')
+        # todo send ack
+
+    # check if message id already exists in ReqQueue2
+    with lock_q2:
+        if msg.msg_id not in [m.msg_id for m in req_q2]:
+            req_q2.append(msg)
+
 """ 
 def service_th1_fct():  
     #TODO
@@ -193,12 +213,9 @@ def sintatic_analizer(params):
     # todo va face check pe response si pe request sa vada ca sunt corecte
     pass
 
+"""
 
-def deduplicator(params):  
-    #TODO
-    pass
-
-
+"""
 def request_processor(params):  
     #TODO
     pass
