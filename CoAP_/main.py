@@ -1,63 +1,98 @@
 import socket
 import sys
-import select
 import threading
+from threading import Lock
+from enum import Enum, auto
+from typing import TypeAlias
+
 import bitarray.util as ut
-from enum import Enum
-from queue import Queue
+import select
 from bitarray import *
 from numpy import floor
 
-#py main.py --r_port=65415 --s_port=65416 --s_ip=192.168.0.103
-#from bitstring import * #posibil de ajutor
+# py main.py --r_port=65415 --s_port=65416 --s_ip=192.168.0.103
+# from bitstring import * #posibil de ajutor
 
 # variabile diverse
-max_up_size = 1024  #max udp payload size
+Token: TypeAlias = int
+max_up_size = 1024  # max udp payload size
 running = False
-req_q1 = Queue(0)  #request queue1
-req_q2 = Queue(0)  #request queue2
+lock_q1 = Lock()
+lock_q2 = Lock()
+req_q1: list['Message'] = list()  # request queue1
+req_q2: list['Message'] = list()  # request queue2
+upload_collection: dict[Token, 'Content'] = dict()
 
-class Msg_type(Enum):
-    Request=1
-    Response=2
 
-#todo check if need prior queue
+class Type(Enum):
+    Request = auto()
+    Response = auto()
 
-upload_collection =[[[]]]  #todo data class
+
+class MsgType(Enum):
+    CON = 0
+    NON = 1
+    ACK = 2
+    RESET = 3
+
+
+# todo check if need prior queue
+class Content:
+
+    def __init__(self, file_path: str):
+        self.file_path: str = file_path
+        self.__packets: dict[int, bytes] = dict()
+
+    def is_valid(self):
+        pck_ids = sorted(self.__packets)
+        for i in range(1, len(pck_ids)):
+            if pck_ids[i] - 1 != pck_ids[i - 1]:
+                return False
+        return True
+
+    # todo
+    # def get_content(self) -> str:
+    #     if self.is_valid():
+    #         return ''.join(self.__packets[i] for i in sorted(self.__packets))
+
+    def add_packet(self, pck_ord_no: int, pck_data: bytes):
+        self.__packets[pck_ord_no] = pck_data
+
 
 class Message:
     def __init__(self, msg_type):
-        self.oper_param = str
-        self.ord_no = int
-        self.op_code = int
+        self.oper_param: str
+        self.ord_no: int
+        self.op_code: int
         self.options = None
-        self.token = int
-        self.msg_id = int
-        self.code_details = int
-        self.code_class = int
-        self.tkn_length = int
-        self.type = int
-        self.version = int
+        self.token: int
+        self.msg_id: int
+        self.code_details: int
+        self.code_class: int
+        self.tkn_length: int
+        self.type: int
+        self.version: int
         self.raw_request = bitarray()
         self.is_valid = False
-        self.msg_type=msg_type
+        self.msg_type = msg_type
 
-    #Request specific method
+    # Request specific method
     def set_raw_data(self, raw_request):
         bitarray.frombytes(self.raw_request, raw_request)
         self.__disassemble_req()
 
-    #Response specific method
+    # Response specific method
     def get_raw_data(self):
-        #todo continue
+        # todo continue
         self.__assemble_resp()
         return self.raw_request.tobytes()
 
+    #todo add try catch
     def __disassemble_req(self):
-        #obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a doua optiuni:
-        #8 - location-Path -> ascii encode
-        #12 - content-format -> ascii encode
-        #obs2. aceste doua optiuni nu au caracteristica de a fi repetabile => prezenta a mai mult de doua optiuni indica o problema
+        # obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a doua optiuni:
+        # 8 - location-Path -> ascii encode
+        # 12 - content-format -> ascii encode
+        # obs2. aceste doua optiuni nu au caracteristica de a fi repetabile => prezenta a mai mult de doua optiuni indica o problema
 
         self.version = bits_to_int(self.raw_request[0:2])
         self.type = bits_to_int(self.raw_request[2:4])
@@ -69,7 +104,7 @@ class Message:
         idx = 32
         self.token = 0
 
-        #for token
+        # for token
         if self.tkn_length > 0:
             idx = (32 + self.tkn_length * 8)
             self.token = bits_to_int(self.raw_request[32:idx])
@@ -79,7 +114,7 @@ class Message:
         prev_option_number = 0
         option_nr = 0
 
-        #for options
+        # for options
         while bits_to_int(self.raw_request[idx:idx + 8]) != int(0xFF) and option_nr < 2:
             option_number = bits_to_int(self.raw_request[idx:idx + 4]) + prev_option_number
             prev_option_number = option_number
@@ -89,9 +124,9 @@ class Message:
             idx = idx + (option_length + 1) * 8
             option_nr += 1
 
-        #for coap payload
+        # for coap payload
         if bits_to_int(self.raw_request[idx:idx + 8]) == int(0xFF):
-            self.is_valid=True
+            self.is_valid = True
             idx += 8
             self.op_code = bits_to_int(self.raw_request[idx:idx + 3])
             self.ord_no = bits_to_int(self.raw_request[idx + 3:idx + 19])
@@ -109,12 +144,14 @@ class Message:
 
     def __repr__(self):
         if self.is_valid:
-            return "raw_req: "+str(self.raw_request).replace("bitarray('","").replace("')","")+"\nversion: "+str(self.version)+\
-               "\ntype: "+str(self.type)+"\ntkn_length: "+str(self.tkn_length)+\
-                "\ncode_class: "+str(self.code_class)+"\ncode_details: "+str(self.code_details)+\
-                "\nmsg_id: "+str(self.msg_id)+"\ntoken: "+str(self.token)+\
-                "\noptions: "+str(self.options)+"\nop_code: "+str(self.op_code)+\
-                "\nord_no: "+str(self.ord_no)+"\noper_param: "+str(self.oper_param)
+            return "raw_req: " + str(self.raw_request).replace("bitarray('", "").replace("')",
+                                                                                         "") + "\nversion: " + str(
+                self.version) + \
+                   "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
+                   "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
+                   "\nmsg_id: " + str(self.msg_id) + "\ntoken: " + str(self.token) + \
+                   "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
+                   "\nord_no: " + str(self.ord_no) + "\noper_param: " + str(self.oper_param)
         else:
             return "invalid request"
 
@@ -128,25 +165,35 @@ def main_th_fct():
         r, _, _ = select.select([soc], [], [], 1)
         if not r:
             counter = counter + 1
-            #todo de intrebat rol
+            # todo de intrebat rol
         else:
             data_rcv, address = soc.recvfrom(max_up_size)
-            new_request = Message(Msg_type.Request)
+            new_request = Message(Type.Request)
             new_request.set_raw_data(data_rcv)
-            req_q1.put(new_request)
-            #todo awake serv_th1
+            req_q1.append(new_request)
+            # todo awake serv_th1
             print("RECEIVED ===> ", new_request, " <=== FROM: ", address)
-            #print("cnt= ", counter)
+            # print("cnt= ", counter)
 
 
-def int_to_bytes(value,length):
+def int_to_bytes(value, length):
     return int(value).to_bytes(byteorder="big", signed=False, length=length)
+
 
 def bits_to_int(value):
     if len(value) % 8 != 0:
-        value= bitarray("0" * (int(floor((len(value) / 8) + 1) * 8) - len(value))) + value
-        #print("param=> " + str(param))
+        value = bitarray("0" * (int(floor((len(value) / 8) + 1) * 8) - len(value))) + value
+        # print("param=> " + str(param))
     return int.from_bytes(value.tobytes(), "big")
+
+
+def deduplicator(msg: Message):
+    # check if message id already exists in ReqQueue2
+    with lock_q2:
+        if msg.msg_id not in [m.msg_id for m in req_q2]:
+            req_q2.append(msg)
+        else:
+            pass # eventual log
 
 
 """ 
@@ -159,17 +206,13 @@ def service_th2_fct():
     #TODO
     pass
 
-
-def sintatic_analizer(params):  
-    #todo va face check pe response si pe request sa vada ca sunt corecte
+def sintatic_analizer(params):
+    # todo va face check pe response si pe request sa vada ca sunt corecte
     pass
 
+"""
 
-def deduplicator(params):  
-    #TODO
-    pass
-
-
+"""
 def request_processor(params):  
     #TODO
     pass
@@ -186,7 +229,7 @@ if __name__ == '__main__':
         print("  --s_ip=send ip ")
         sys.exit()
 
-    #todo de intrebat primit data request de oriunde, orice ip sau primit prin parametri
+    # todo de intrebat primit data request de oriunde, orice ip sau primit prin parametri
     for arg in sys.argv:
         if arg.startswith("--r_port"):
             temp, r_port = arg.split("=")
