@@ -14,14 +14,14 @@ from numpy import floor
 # from bitstring import * #posibil de ajutor
 
 # variabile diverse
+Token: TypeAlias = int
 max_up_size = 1024  # max udp payload size
 running = False
 lock_q1 = Lock()
 lock_q2 = Lock()
 req_q1: list['Message'] = list()  # request queue1
 req_q2: list['Message'] = list()  # request queue2
-
-Token: TypeAlias = int
+upload_collection: dict[Token, 'Content'] = dict()
 
 
 class Type(Enum):
@@ -41,7 +41,7 @@ class Content:
 
     def __init__(self, file_path: str):
         self.file_path: str = file_path
-        self.__packets: dict[int, str] = dict()
+        self.__packets: dict[int, bytes] = dict()
 
     def is_valid(self):
         pck_ids = sorted(self.__packets)
@@ -50,15 +50,13 @@ class Content:
                 return False
         return True
 
-    def get_content(self) -> str:
-        if self.is_valid():
-            return ''.join(self.__packets[i] for i in sorted(self.__packets))
+    # todo
+    # def get_content(self) -> str:
+    #     if self.is_valid():
+    #         return ''.join(self.__packets[i] for i in sorted(self.__packets))
 
-    def add_packet(self, pck_ord_no: int, pck_data: str):
+    def add_packet(self, pck_ord_no: int, pck_data: bytes):
         self.__packets[pck_ord_no] = pck_data
-
-
-upload_collection: dict[Token, Content] = dict()
 
 
 class Message:
@@ -89,6 +87,7 @@ class Message:
         self.__assemble_resp()
         return self.raw_request.tobytes()
 
+    #todo add try catch
     def __disassemble_req(self):
         # obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a doua optiuni:
         # 8 - location-Path -> ascii encode
@@ -171,7 +170,7 @@ def main_th_fct():
             data_rcv, address = soc.recvfrom(max_up_size)
             new_request = Message(Type.Request)
             new_request.set_raw_data(data_rcv)
-            req_q1.put(new_request)
+            req_q1.append(new_request)
             # todo awake serv_th1
             print("RECEIVED ===> ", new_request, " <=== FROM: ", address)
             # print("cnt= ", counter)
@@ -188,16 +187,14 @@ def bits_to_int(value):
     return int.from_bytes(value.tobytes(), "big")
 
 
-# todo continue deduplicator
 def deduplicator(msg: Message):
-    if msg.type == MsgType.CON:
-        print('send ack')
-        # todo send ack
-
     # check if message id already exists in ReqQueue2
     with lock_q2:
         if msg.msg_id not in [m.msg_id for m in req_q2]:
             req_q2.append(msg)
+        else:
+            pass # eventual log
+
 
 """ 
 def service_th1_fct():  
