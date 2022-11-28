@@ -23,11 +23,15 @@ req_q1: list['Message'] = list()  # request queue1
 req_q2: list['Message'] = list()  # request queue2
 upload_collection: dict[Token, 'Content'] = dict()
 
+# 2.01 | Created, 2.02 | Deleted, 2.03 | Valid,2.04 | Changed, 2.05 | Content
+# 4.00 | Bad Request, 4.02 | Bad Option, 4.04 | Not Found
+# 5.00 | Internal Server Error
 RESPONSE_CODES = {
     2: [1, 2, 4, 5],
-    4: [2, 4],
+    4: [0, 2, 4],
     5: [0]
 }
+# 8 | Location-Path, 12 | Content-Format, 60 | Size1
 OPTIONS_NUMBERS = [8, 12, 60]
 
 
@@ -51,6 +55,8 @@ class MsgType(Enum):
 
 
 # todo check if need prior queue
+
+# clasa care contine pachetele si ordinea acestora
 class Content:
 
     def __init__(self, file_path: str):
@@ -64,10 +70,9 @@ class Content:
                 return False
         return True
 
-    # todo
-    # def get_content(self) -> str:
-    #     if self.is_valid():
-    #         return ''.join(self.__packets[i] for i in sorted(self.__packets))
+    def get_content(self) -> str:
+        if self.is_valid():
+            return ''.join(self.__packets[i].decode("utf-8") for i in sorted(self.__packets))
 
     def add_packet(self, pck_ord_no: int, pck_data: bytes):
         self.__packets[pck_ord_no] = pck_data
