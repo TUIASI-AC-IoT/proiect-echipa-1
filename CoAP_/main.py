@@ -5,17 +5,16 @@ from enum import Enum, auto
 from threading import Lock
 from typing import TypeAlias
 
-import bitarray.util as ut
 import select
 from bitarray import *
 from numpy import floor
 
 # py main.py --r_port=65415 --s_port=65416 --s_ip=192.168.0.103
-# from bitstring import * #posibil de ajutor
 
 # variabile diverse
 Token: TypeAlias = int
-max_up_size = 1024  # max udp payload size
+max_up_size = 65507  # max udp payload size
+total_nr_options = 3  # numarul total de optiuni posibile intr-un mesaj
 running = False
 lock_q1 = Lock()
 lock_q2 = Lock()
@@ -35,12 +34,16 @@ RESPONSE_CODES = {
 OPTIONS_NUMBERS = [8, 12, 60]
 
 
+class MsgType(Enum):
+    Request = auto()
+    Response = auto()
+
+
 class MethodCodes(Enum):
     GET = 1
     POST = 2
     PUT = 3
     DELETE = 4
-
 
 class Type(Enum):
     CON = 0
@@ -48,13 +51,6 @@ class Type(Enum):
     ACK = 2
     RESET = 3
 
-
-class MsgType(Enum):
-    Request = auto()
-    Response = auto()
-
-
-# todo check if need prior queue
 
 # clasa care contine pachetele si ordinea acestora
 class Content:
@@ -78,6 +74,7 @@ class Content:
         self.__packets[pck_ord_no] = pck_data
 
 
+# clasa generica pentru mesajele coap specifice
 class Message:
     def __init__(self, msg_type):
         self.oper_param: str
@@ -92,26 +89,32 @@ class Message:
         self.type: int
         self.version: int
         self.raw_request = bitarray()
-        self.is_valid = False
         self.msg_type = msg_type
+        self.is_valid = False
+        self.invalid_reasons = []
 
     # Request specific method
     def set_raw_data(self, raw_request):
         bitarray.frombytes(self.raw_request, raw_request)
-        self.__disassemble_req()
+        try:
+            self.__disassemble_req()
+        except:
+            self.is_valid = False
 
     # Response specific method
     def get_raw_data(self):
-        # todo continue
-        self.__assemble_resp()
-        return self.raw_request.tobytes()
+        try:
+            self.__assemble_resp()
+            return self.raw_request.tobytes()
+        except:
+            return bytes("00")
 
-    # todo add try catch
     def __disassemble_req(self):
-        # obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a doua optiuni:
+        # obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a trei optiuni:
         # 8 - location-Path -> ascii encode
         # 12 - content-format -> ascii encode
-        # obs2. aceste doua optiuni nu au caracteristica de a fi repetabile => prezenta a mai mult de doua optiuni indica o problema
+        # 60 - Size1 -> ascii encoded
+        # obs2. aceste trei optiuni nu au caracteristica de a fi repetabile => prezenta a mai mult de trei optiuni indica o problema
 
         self.version = bits_to_int(self.raw_request[0:2])
         self.type = bits_to_int(self.raw_request[2:4])
@@ -134,15 +137,66 @@ class Message:
         option_nr = 0
 
         # for options
-        while bits_to_int(self.raw_request[idx:idx + 8]) != int(0xFF) and option_nr < 2:
-            # crapa la accesare indecsi, daca sirul este invalid
-            option_number = bits_to_int(self.raw_request[idx:idx + 4]) + prev_option_number
+
+        while bits_to_int(self.raw_request[idx:idx + 8]) != int(0xFF) and option_nr < total_nr_options:
+            ext_delta_bytes = 0  # extra delta bytes
+            ext_option_bytes = 0  # extra length bytes
+
+            # option_delta
+            option_number = bits_to_int(self.raw_request[idx:idx + 4])
+
+            if option_number < 13:
+                option_number += prev_option_number
+            elif option_number == 13:
+                option_number = bits_to_int(self.raw_request[idx + 8:idx + 16]) - 13 + prev_option_number
+                ext_delta_bytes = 1
+            elif option_number == 14:
+                option_number = bits_to_int(self.raw_request[idx + 8:idx + 24]) - 269 + prev_option_number
+                ext_delta_bytes = 2
+            else:
+                self.invalid_reasons.append(
+                    "__disassemble_req: Option delta incorect (teoretic 15, practic >=15): " + str(option_number))
+                raise Exception
             prev_option_number = option_number
+
+            # option length
             option_length = bits_to_int(self.raw_request[idx + 4:idx + 8])
-            option_value = (self.raw_request[idx + 8:idx + (option_length + 1) * 8]).tobytes().decode("utf-8")
-            self.options.append([option_number, option_value])
-            idx = idx + (option_length + 1) * 8
-            option_nr += 1
+
+            try:
+                if option_length > 0:
+                    if option_length < 13:
+                        option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (
+                                ext_delta_bytes + option_length + 1) * 8]).tobytes().decode("utf-8")
+                        self.options.append([option_number, option_value])
+                    elif option_length == 13:
+                        option_length = bits_to_int(
+                            self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (ext_delta_bytes + 2) * 8]) - 13
+                        option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 2):idx + (
+                                ext_delta_bytes + option_length + 2) * 8]).tobytes().decode("utf-8")
+                        self.options.append([option_number, option_value])
+                        ext_option_bytes = 1
+                    elif option_length == 14:
+                        option_length = bits_to_int(
+                            self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (ext_delta_bytes + 3) * 8]) - 269
+                        option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 3):idx + (
+                                ext_delta_bytes + option_length + 3) * 8]).tobytes().decode("utf-8")
+                        self.options.append([option_number, option_value])
+                        ext_option_bytes = 2
+                    else:
+                        self.invalid_reasons.append(
+                            "__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(
+                                option_length))
+                        raise Exception
+                else:
+                    self.invalid_reasons.append(
+                        "__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(option_length))
+                    raise Exception
+
+                idx = idx + (ext_delta_bytes + option_length + ext_option_bytes + 1) * 8
+                option_nr += 1
+            except Exception as e:
+                self.invalid_reasons.append("__disassemble_req:" + str(e))
+                raise e
 
         # for coap payload
         if bits_to_int(self.raw_request[idx:idx + 8]) == int(0xFF):
@@ -150,17 +204,157 @@ class Message:
             idx += 8
             self.op_code = bits_to_int(self.raw_request[idx:idx + 3])
             self.ord_no = bits_to_int(self.raw_request[idx + 3:idx + 19])
-            self.oper_param = (self.raw_request[idx + 19:]).tobytes().decode("utf-8")
+            try:
+                self.oper_param = (self.raw_request[idx + 19:]).tobytes().decode("utf-8")
+            except Exception as e:
+                self.invalid_reasons.append("__disassemble_req:" + str(e))
+                raise e
 
     def __assemble_resp(self):
-        # todo not good now
-        bitarray.frombytes(self.raw_request, int_to_bytes(self.version, 1))
-        ut.strip(self.raw_request, "left")
-        part = bitarray()
-        bitarray.frombytes(part, int_to_bytes(self.type, 1))
-        ut.strip(part, "left")
-        self.raw_request += part
-        # todo continue
+        # version
+        value = bitarray()
+        bitarray.frombytes(value, int_to_bytes(self.version, 1))
+        result = value[-2:]
+
+        # type
+        value = bitarray()
+        bitarray.frombytes(value, int_to_bytes(self.type, 1))
+        result += value[-2:]
+
+        # token length
+        value = bitarray()
+        bitarray.frombytes(value, int_to_bytes(self.tkn_length, 1))
+        result += value[-4:]
+
+        # code.class
+        value = bitarray()
+        bitarray.frombytes(value, int_to_bytes(self.code_class, 1))
+        result += value[-3:]
+
+        # code.details
+        value = bitarray()
+        bitarray.frombytes(value, int_to_bytes(self.code_details, 1))
+        result += value[-5:]
+
+        # message id
+        value = bitarray()
+        bitarray.frombytes(value, int_to_bytes(self.msg_id, 2))
+        result += value
+
+        # token value
+        if self.tkn_length > 0:
+            value = bitarray()
+            bitarray.frombytes(value, int_to_bytes(self.token, self.tkn_length))
+            result += value
+
+        # options
+        # options[idx][0] - option nr
+        # options[idx][1] - option value
+        prev_option_nr = 0
+
+        for idx in range(len(self.options)):
+
+            if len(self.options[idx][1].encode('utf-8')) > 0:
+                option_delta = self.options[idx][0] - prev_option_nr
+                prev_option_nr = self.options[idx][0]
+
+                if option_delta < 13:
+                    result = self.__method(result, option_delta, 1, False)
+
+                    if len(self.options[idx][1].encode('utf-8')) < 13:
+                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')), 1, False)
+
+                    elif len(self.options[idx][1].encode('utf-8')) < 243:  # 256-13
+                        result = self.__method(result, 13, 1, False)
+                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 13, 1, True)
+
+                    elif len(self.options[idx][1].encode('utf-8')) < 65266:  # 65535-269
+                        result = self.__method(result, 14, 1, False)
+                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 269, 2, True)
+                    else:
+                        self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
+                            len(self.options[idx][1].encode('utf-8'))))
+                        raise Exception
+
+                elif option_delta < 243:
+                    result = self.__method(result, 13, 1, False)
+
+                    if len(self.options[idx][1].encode('utf-8')) < 13:
+                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')), 1, False)
+                        result = self.__method(result, option_delta + 13, 1, True)
+
+                    elif len(self.options[idx][1].encode('utf-8')) < 243:  # 256-13
+                        result = self.__method(result, 13, 1, False)
+                        result = self.__method(result, option_delta + 13, 1, True)
+                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 13, 1, True)
+
+                    elif len(self.options[idx][1].encode('utf-8')) < 65266:  # 65535-269
+                        result = self.__method(result, 14, 1, False)
+                        result = self.__method(result, option_delta + 13, 1, True)
+                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 269, 2, True)
+                    else:
+                        self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
+                            len(self.options[idx][1].encode('utf-8'))))
+                        raise Exception
+
+                elif option_delta < 65266:
+                    result = self.__method(result, 14, 1, False)
+
+                    if len(self.options[idx][1].encode('utf-8')) < 13:
+                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')), 1, False)
+                        result = self.__method(result, option_delta + 269, 2, True)
+
+                    elif len(self.options[idx][1].encode('utf-8')) < 243:  # 256-13
+                        result = self.__method(result, 13, 1, False)
+                        result = self.__method(result, option_delta + 269, 2, True)
+                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 13, 1, True)
+
+                    elif len(self.options[idx][1].encode('utf-8')) < 65266:  # 65535-269
+                        result = self.__method(result, 14, 1, False)
+                        result = self.__method(result, option_delta + 269, 2, True)
+                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 269, 2, True)
+                    else:
+                        self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
+                            len(self.options[idx][1].encode('utf-8'))))
+                        raise Exception
+
+                value = bitarray()
+                bitarray.frombytes(value, self.options[idx][1].encode('utf-8'))
+                result += value
+            else:
+                self.invalid_reasons.append("__assemble_resp: lungimea optiunii este 0")
+                raise Exception
+
+        # payload marker
+        value = bitarray()
+        bitarray.frombytes(value, int_to_bytes(int(0xFF), 1))
+        result += value
+
+        # operation code
+        value = bitarray()
+        bitarray.frombytes(value, int_to_bytes(self.op_code, 1))
+        result += value[-3:]
+
+        # order number
+        value = bitarray()
+        bitarray.frombytes(value, int_to_bytes(self.ord_no, 2))
+        result += value
+
+        # operation parameter
+        value = bitarray()
+        bitarray.frombytes(value, self.oper_param.encode('utf-8'))
+        result += value
+
+        return result.tobytes()
+
+    def __method(self, pack, val_to_conv, bytes_nr, add_full):
+        value = bitarray()
+        bitarray.frombytes(value, int_to_bytes(val_to_conv, bytes_nr))
+        if add_full:
+            pack += value
+        else:
+            pack += value[-4:]
+        return pack
 
     def __repr__(self):
         if self.is_valid:
@@ -173,7 +367,7 @@ class Message:
                    "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
                    "\nord_no: " + str(self.ord_no) + "\noper_param: " + str(self.oper_param)
         else:
-            return "invalid request"
+            return "Invalid request. Check reasons: " + str(self.invalid_reasons)
 
 
 def main_th_fct():
@@ -191,9 +385,14 @@ def main_th_fct():
             new_request = Message(MsgType.Request)
             new_request.set_raw_data(data_rcv)
             req_q1.append(new_request)
+
+            new_request2 = Message(MsgType.Response)
+            new_request2.set_raw_data(new_request.get_raw_data())
+
             # todo awake serv_th1
-            print("RECEIVED ===> ", new_request, " <=== FROM: ", address)
-            # print("cnt= ", counter)
+            print("DATA ===>\n", new_request, " \n<=== FROM: ", address)
+            print("DATA ===>\n", new_request2, " \n<=== FROM: ", address)
+            # # print("cnt= ", counter)
 
 
 def int_to_bytes(value, length):
@@ -317,9 +516,22 @@ def deduplicator(msg: Message) -> bool:
             req_q2.append(msg)
             return True
         else:
-            pass  # eventual log
+
+            pass  # todo eventual log
     return False
 
+
+""" 
+
+def gen_token():
+    #TODO
+    PASS
+    
+def gen_msg_id():
+    #todo
+    pass
+
+"""
 
 def service_th1_fct():
     while len(req_q1) != 0:
@@ -348,6 +560,8 @@ if __name__ == '__main__':
 
     # todo awake and sleep mecans for threads
     # todo colectie care contine toate thread urile petru join sau alte necesitati
+    # todo logging
+    # todo exceptions handling
 
     if len(sys.argv) != 4:
         print("Help : ")
@@ -391,15 +605,3 @@ if __name__ == '__main__':
             print("Waiting for the thread to close...")
             main_thread.join()
             break
-
-"""
-def bytes_to_bits(data):
-    def access_bit(data_inn, num):
-        #sursa functie access_bit: https://stackoverflow.com/questions/43787031/python-byte-array-to-bit-array
-        base = int(num // 8)
-        shift = int(num % 8)
-        return (data_inn[base] >> shift) & 0x1
-
-    return str([access_bit(data, i) for i in range(len(data) * 8)]).replace(",", "").replace("[", "").replace("]", "").replace(" ", "")
- #used as #bitarray(bytes_to_bits(data_rcv))
-"""
