@@ -310,26 +310,33 @@ def sintatic_analizer(msg: Message) -> bool:
     return valid
 
 
-def deduplicator(msg: Message):
+def deduplicator(msg: Message) -> bool:
     # check if message id already exists in ReqQueue2
     with lock_q2:
         if msg.msg_id not in [m.msg_id for m in req_q2]:
             req_q2.append(msg)
+            return True
         else:
             pass  # eventual log
+    return False
 
 
-""" 
-def service_th1_fct():  
-    #TODO
-    pass
+def service_th1_fct():
+    while len(req_q1) != 0:
+        msg: Message
+        with lock_q1:
+            msg = req_q1.pop(0)
+        if msg is not None:
+            if sintatic_analizer(msg):
+                if deduplicator(msg):
+                    # todo awake thread 2
+                    pass
 
 
-def service_th2_fct():  
-    #TODO
-    pass
+def service_th2_fct():
+    while len(req_q2) != 0:
+        pass
 
-"""
 
 """
 def request_processor(params):  
