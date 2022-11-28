@@ -14,7 +14,6 @@ from numpy import floor
 # variabile diverse
 Token: TypeAlias = int
 max_up_size = 65507  # max udp payload size
-total_nr_options = 3  # numarul total de optiuni posibile intr-un mesaj
 running = False
 lock_q1 = Lock()
 lock_q2 = Lock()
@@ -32,6 +31,7 @@ RESPONSE_CODES = {
 }
 # 8 | Location-Path, 12 | Content-Format, 60 | Size1
 OPTIONS_NUMBERS = [8, 12, 60]
+total_nr_options = len(OPTIONS_NUMBERS)  # numarul total de optiuni posibile intr-un mesaj
 
 
 class MsgType(Enum):
@@ -44,6 +44,7 @@ class MethodCodes(Enum):
     POST = 2
     PUT = 3
     DELETE = 4
+
 
 class Type(Enum):
     CON = 0
@@ -104,10 +105,9 @@ class Message:
     # Response specific method
     def get_raw_data(self):
         try:
-            self.__assemble_resp()
-            return self.raw_request.tobytes()
+            return self.__assemble_resp()
         except:
-            return bytes("00")
+            return int(0).to_bytes(1,"little",signed=False)
 
     def __disassemble_req(self):
         # obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a trei optiuni:
@@ -206,6 +206,8 @@ class Message:
             self.ord_no = bits_to_int(self.raw_request[idx + 3:idx + 19])
             try:
                 self.oper_param = (self.raw_request[idx + 19:]).tobytes().decode("utf-8")
+                #todo be carefull added for removing unknow aperance reason char
+                self.oper_param=self.oper_param[:len(self.oper_param)-1]
             except Exception as e:
                 self.invalid_reasons.append("__disassemble_req:" + str(e))
                 raise e
@@ -237,15 +239,11 @@ class Message:
         result += value[-5:]
 
         # message id
-        value = bitarray()
-        bitarray.frombytes(value, int_to_bytes(self.msg_id, 2))
-        result += value
+        result = self.__method(result, self.msg_id, 2, True)
 
         # token value
         if self.tkn_length > 0:
-            value = bitarray()
-            bitarray.frombytes(value, int_to_bytes(self.token, self.tkn_length))
-            result += value
+            result = self.__method(result, self.token, self.tkn_length, True)
 
         # options
         # options[idx][0] - option nr
@@ -371,6 +369,7 @@ class Message:
 
 
 def main_th_fct():
+     # to do sync mechans for queues
     counter = 0
     while running:
         # todo de intrebat rol
@@ -386,12 +385,9 @@ def main_th_fct():
             new_request.set_raw_data(data_rcv)
             req_q1.append(new_request)
 
-            new_request2 = Message(MsgType.Response)
-            new_request2.set_raw_data(new_request.get_raw_data())
-
+            print(sintatic_analizer(new_request))
             # todo awake serv_th1
-            print("DATA ===>\n", new_request, " \n<=== FROM: ", address)
-            print("DATA ===>\n", new_request2, " \n<=== FROM: ", address)
+            print("\nDATA ===>\n", new_request, " \n<=== FROM: ", address)
             # # print("cnt= ", counter)
 
 
@@ -402,7 +398,6 @@ def int_to_bytes(value, length):
 def bits_to_int(value):
     if len(value) % 8 != 0:
         value = bitarray("0" * (int(floor((len(value) / 8) + 1) * 8) - len(value))) + value
-        # print("param=> " + str(param))
     return int.from_bytes(value.tobytes(), "big")
 
 
@@ -516,22 +511,9 @@ def deduplicator(msg: Message) -> bool:
             req_q2.append(msg)
             return True
         else:
-
             pass  # todo eventual log
     return False
 
-
-""" 
-
-def gen_token():
-    #TODO
-    PASS
-    
-def gen_msg_id():
-    #todo
-    pass
-
-"""
 
 def service_th1_fct():
     while len(req_q1) != 0:
@@ -551,6 +533,16 @@ def service_th2_fct():
 
 
 """
+
+def gen_token():
+    #TODO
+    PASS
+    
+def gen_msg_id():
+    #todo
+    pass
+
+
 def request_processor(params):  
     #TODO
     pass
@@ -597,9 +589,10 @@ if __name__ == '__main__':
     while True:
         # todo control comands for basic terminal
         try:
-            useless = input("Send: ")
-            test_data = bitarray('01101101 01100101 01110011 01100001 01101010 00100000 01101101 01100101 01110011')
-            soc.sendto(test_data.tobytes(), (s_ip, int(s_port)))
+            useless = input("Send(enter): ")
+            response = Message(MsgType.Response)
+            #set response data
+            soc.sendto(response.get_raw_data(), (s_ip, int(s_port)))
         except KeyboardInterrupt:
             running = False
             print("Waiting for the thread to close...")
