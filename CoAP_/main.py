@@ -1,8 +1,8 @@
 import socket
 import sys
 import threading
-from threading import Lock
 from enum import Enum, auto
+from threading import Lock
 from typing import TypeAlias
 
 import select
@@ -22,11 +22,28 @@ req_q1: list['Message'] = list()  # request queue1
 req_q2: list['Message'] = list()  # request queue2
 upload_collection: dict[Token, 'Content'] = dict()
 
+# 2.01 | Created, 2.02 | Deleted, 2.03 | Valid,2.04 | Changed, 2.05 | Content
+# 4.00 | Bad Request, 4.02 | Bad Option, 4.04 | Not Found
+# 5.00 | Internal Server Error
+RESPONSE_CODES = {
+    2: [1, 2, 4, 5],
+    4: [0, 2, 4],
+    5: [0]
+}
+# 8 | Location-Path, 12 | Content-Format, 60 | Size1
+OPTIONS_NUMBERS = [8, 12, 60]
+
 
 class MsgType(Enum):
     Request = auto()
     Response = auto()
 
+
+class MethodCodes(Enum):
+    GET = 1
+    POST = 2
+    PUT = 3
+    DELETE = 4
 
 class Type(Enum):
     CON = 0
@@ -35,6 +52,7 @@ class Type(Enum):
     RESET = 3
 
 
+# clasa care contine pachetele si ordinea acestora
 class Content:
 
     def __init__(self, file_path: str):
@@ -48,10 +66,9 @@ class Content:
                 return False
         return True
 
-    # todo
-    # def get_content(self) -> str:
-    #     if self.is_valid():
-    #         return ''.join(self.__packets[i] for i in sorted(self.__packets))
+    def get_content(self) -> str:
+        if self.is_valid():
+            return ''.join(self.__packets[i].decode("utf-8") for i in sorted(self.__packets))
 
     def add_packet(self, pck_ord_no: int, pck_data: bytes):
         self.__packets[pck_ord_no] = pck_data
@@ -120,6 +137,7 @@ class Message:
         option_nr = 0
 
         # for options
+
         while bits_to_int(self.raw_request[idx:idx + 8]) != int(0xFF) and option_nr < total_nr_options:
             ext_delta_bytes = 0  # extra delta bytes
             ext_option_bytes = 0  # extra length bytes
@@ -388,13 +406,119 @@ def bits_to_int(value):
     return int.from_bytes(value.tobytes(), "big")
 
 
-def deduplicator(msg: Message):
+# START ------ check functions for CoAP header ------ START
+
+def check_type(msg: Message):
+    return msg.type in [t.value for t in Type]
+
+
+def check_code(msg: Message):
+    if msg.msg_type == MsgType.Request:
+        if msg.code_class == 0 and msg.code_details in [mc.value for mc in MethodCodes]:
+            return True
+    else:
+        if msg.code_class in RESPONSE_CODES.keys():
+            if msg.code_details in RESPONSE_CODES[msg.code_details]:
+                return True
+    return False
+
+
+def check_msg_id(msg: Message):
+    return msg.msg_id is not None
+
+
+def check_token_tkl(msg: Message):
+    return (0 <= msg.tkn_length <= 8) and (msg.token is not None)
+
+
+def check_options(msg: Message):
+    for opt in msg.options:
+        if opt[0] not in OPTIONS_NUMBERS or opt[1] is None:
+            return False
+    return True
+
+
+def check_op_code(msg: Message):
+    return 0 <= msg.op_code <= 7
+
+
+def check_ord_no(msg: Message):
+    if msg.op_code > 0:
+        if msg.ord_no != 0:
+            return False
+    else:
+        if msg.ord_no < 0:
+            return False
+    return True
+
+
+def check_oper_param(msg: Message):
+    result = False
+    if msg.op_code == 0:
+        if msg.code_class == 0:
+            if msg.code_details == MethodCodes.PUT.value:
+                result = bool(msg.oper_param)
+            elif msg.code_details == MethodCodes.GET.value:
+                result = not msg.oper_param
+    elif msg.op_code in [2, 4, 6]:
+        result = not msg.oper_param
+    else:
+        result = bool(msg.oper_param)
+
+    return result
+
+
+# END ------ check functions for CoAP header ------ END
+
+# functions that check the header without the payload part
+check_functions = [
+    [check_type, check_code, check_msg_id, check_token_tkl, check_options],  # part1 without payload
+    [check_op_code, check_ord_no, check_oper_param]  # payload part
+]
+
+
+def sintatic_analizer(msg: Message) -> bool:
+    valid: bool = msg.is_valid
+    if valid:
+        # messages with version number not equal to 1 MUST be silently ignored
+        if msg.version == 1:
+
+            for fun in check_functions[0]:
+                value = fun(msg)
+                if not value:
+                    valid = False
+                    break
+
+            # if the CoAP format is invalid
+            if not valid:
+                # todo send RST
+                pass
+            else:
+                # check the payload format
+                for fun in check_functions[1]:
+                    if not fun(msg):
+                        valid = False
+                        break
+                if valid:
+                    # todo send ACK
+                    pass
+
+        else:
+            valid = False
+
+    return valid
+
+
+def deduplicator(msg: Message) -> bool:
     # check if message id already exists in ReqQueue2
     with lock_q2:
         if msg.msg_id not in [m.msg_id for m in req_q2]:
             req_q2.append(msg)
+            return True
         else:
+
             pass  # todo eventual log
+    return False
 
 
 """ 
@@ -407,20 +531,24 @@ def gen_msg_id():
     #todo
     pass
 
-def service_th1_fct():  
-    #TODO
-    pass
-
-
-def service_th2_fct():  
-    #TODO
-    pass
-
-def sintatic_analizer(params):
-    # todo va face check pe response si pe request sa vada ca sunt corecte
-    pass
-
 """
+
+def service_th1_fct():
+    while len(req_q1) != 0:
+        msg: Message
+        with lock_q1:
+            msg = req_q1.pop(0)
+        if msg is not None:
+            if sintatic_analizer(msg):
+                if deduplicator(msg):
+                    # todo awake thread 2
+                    pass
+
+
+def service_th2_fct():
+    while len(req_q2) != 0:
+        pass
+
 
 """
 def request_processor(params):  
@@ -429,6 +557,7 @@ def request_processor(params):
 """
 
 if __name__ == '__main__':
+
     # todo awake and sleep mecans for threads
     # todo colectie care contine toate thread urile petru join sau alte necesitati
     # todo logging
