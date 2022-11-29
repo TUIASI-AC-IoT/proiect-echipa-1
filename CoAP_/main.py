@@ -14,6 +14,12 @@ from numpy import floor
 # variabile diverse
 Token: TypeAlias = int
 max_up_size = 65507  # max udp payload size
+first_run_msg_id = True
+msg_id_file = None
+last_msg_id = int
+token_file = None
+first_run_token = True
+last_tokens = []
 running = False
 lock_q1 = Lock()
 lock_q2 = Lock()
@@ -107,7 +113,7 @@ class Message:
         try:
             return self.__assemble_resp()
         except:
-            return int(0).to_bytes(1,"little",signed=False)
+            return int(0).to_bytes(1, "little", signed=False)
 
     def __disassemble_req(self):
         # obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a trei optiuni:
@@ -206,8 +212,8 @@ class Message:
             self.ord_no = bits_to_int(self.raw_request[idx + 3:idx + 19])
             try:
                 self.oper_param = (self.raw_request[idx + 19:]).tobytes().decode("utf-8")
-                #todo be carefull added for removing unknow aperance reason char
-                self.oper_param=self.oper_param[:len(self.oper_param)-1]
+                # todo be carefull added for removing unknow aperance reason char
+                self.oper_param = self.oper_param[:len(self.oper_param) - 1]
             except Exception as e:
                 self.invalid_reasons.append("__disassemble_req:" + str(e))
                 raise e
@@ -369,7 +375,7 @@ class Message:
 
 
 def main_th_fct():
-     # to do sync mechans for queues
+    # to do sync mechans for queues
     counter = 0
     while running:
         # todo de intrebat rol
@@ -532,17 +538,92 @@ def service_th2_fct():
         pass
 
 
-"""
+def str_to_list(str_param: str):
+    params = str_param.split(",")
+    result = []
+    for elem in params:
+        result.append(int(elem))
+    return result
 
-def gen_token():
-    #TODO
-    PASS
-    
+
+def find_idx(len_to_search):
+    for idx in range(len(last_tokens)):
+        if last_tokens[idx][0] == len_to_search:
+            return idx
+
+    return -1
+
+
+def lists_to_str():
+    result=list()
+    for _list in last_tokens:
+        result.append(str(_list[0]) + "," + str(_list[1]))
+
+    return result
+
+
+def gen_token(tkn_length_in_bits):
+    global first_run_token
+    global token_file
+    global last_tokens
+
+    if first_run_token:
+        with open("token.txt", "r") as f:
+            result_list = f.read().splitlines()
+            token_file = f
+            token_file.close()
+        for idx in range(len(result_list)):
+            last_tokens.append(str_to_list(result_list[idx]))
+        first_run_token=False
+
+    _idx = find_idx(tkn_length_in_bits)
+    if _idx > -1:
+        if last_tokens[_idx][1]<pow(2, tkn_length_in_bits)-1:
+            result= last_tokens[_idx][1]+1
+        else:
+            result=0
+    else:
+        result= 0
+
+    token_file = open("token.txt", 'w')
+    token_file.close()
+    token_file = open("token.txt", 'a')
+    if _idx==-1:
+        last_tokens.append([tkn_length_in_bits, result])
+    else:
+        last_tokens[_idx][1]=result
+    for line in lists_to_str():
+        token_file.write(line + "\n")
+    token_file.close()
+
+    return result
+
+
 def gen_msg_id():
-    #todo
-    pass
+    global first_run_msg_id
+    global msg_id_file
+    global last_msg_id
+    if first_run_msg_id:
+        msg_id_file = open("msg_id.txt", "r", encoding='utf-16')
+        last_msg_id = int(msg_id_file.read())
+        first_run_msg_id = False
+        msg_id_file.close()
+
+    if last_msg_id < pow(2, 16)-1:
+        last_msg_id += 1
+    else:
+        last_msg_id = 0
+
+    msg_id_file = open("msg_id.txt", 'w', encoding='utf-16')
+    msg_id_file.close()
+    msg_id_file = open("msg_id.txt", 'a', encoding='utf-16')
+    msg_id_file.write(str(last_msg_id))
+    msg_id_file.close()
+
+    return last_msg_id
 
 
+"""
 def request_processor(params):  
     #TODO
     pass
@@ -589,12 +670,17 @@ if __name__ == '__main__':
     while True:
         # todo control comands for basic terminal
         try:
-            useless = input("Send(enter): ")
-            response = Message(MsgType.Response)
-            #set response data
+            useless = input("Send(enter):\n")
+            response =Message(MsgType.Response)
+            # set response data
             soc.sendto(response.get_raw_data(), (s_ip, int(s_port)))
         except KeyboardInterrupt:
             running = False
             print("Waiting for the thread to close...")
             main_thread.join()
+            try:
+                msg_id_file.close()
+                token_file.close()
+            except:
+                pass
             break
