@@ -13,13 +13,13 @@ from numpy import floor
 
 # variabile diverse
 Token: TypeAlias = int
+
+# path of the server root files
+ROOT = r''
+
 max_up_size = 65507  # max udp payload size
-total_nr_options = 3  # numarul total de optiuni posibile intr-un mesaj
 running = False
-lock_q1 = Lock()
-lock_q2 = Lock()
-req_q1: list['Message'] = list()  # request queue1
-req_q2: list['Message'] = list()  # request queue2
+
 upload_collection: dict[Token, 'Content'] = dict()
 
 # 2.01 | Created, 2.02 | Deleted, 2.03 | Valid,2.04 | Changed, 2.05 | Content
@@ -30,8 +30,47 @@ RESPONSE_CODES = {
     4: [0, 2, 4],
     5: [0]
 }
+
+
 # 8 | Location-Path, 12 | Content-Format, 60 | Size1
-OPTIONS_NUMBERS = [8, 12, 60]
+class OptionNumbers(Enum):
+    LocationPath = 8
+    ContentFormat = 12
+    Size1 = 60
+
+
+total_nr_options = len(OptionNumbers)  # numarul total de optiuni posibile intr-un mesaj
+
+
+class MsgList:
+    def __init__(self):
+        self.__list: list['Message'] = list()
+        self.__lock = Lock()
+
+    def append(self, obj) -> None:
+        with self.__lock:
+            self.__list.append(obj)
+
+    def __getitem__(self, index):
+        with self.__lock:
+            return self.__list[index]
+
+    def pop(self, index):
+        with self.__lock:
+            return self.__list.pop(index)
+
+    # @property
+    # def len(self):
+    #     with self.__lock:
+    #         return len(self.__list)
+
+    def get_msg_id_list(self):
+        with self.__lock:
+            return [m.msg_id for m in self.__list]
+
+
+req_q1 = MsgList()  # request queue1
+req_q2 = MsgList()  # request queue2
 
 
 class MsgType(Enum):
@@ -45,6 +84,7 @@ class MethodCodes(Enum):
     PUT = 3
     DELETE = 4
 
+
 class Type(Enum):
     CON = 0
     NON = 1
@@ -55,8 +95,9 @@ class Type(Enum):
 # clasa care contine pachetele si ordinea acestora
 class Content:
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, file_type: str):
         self.file_path: str = file_path
+        self.file_type: str = file_type
         self.__packets: dict[int, bytes] = dict()
 
     def is_valid(self):
@@ -66,9 +107,12 @@ class Content:
                 return False
         return True
 
-    def get_content(self) -> str:
+    def get_content(self) -> bitarray:
+        result = bitarray()
         if self.is_valid():
-            return ''.join(self.__packets[i].decode("utf-8") for i in sorted(self.__packets))
+            for x in self.__packets.values():
+                result.extend(x)
+        return result
 
     def add_packet(self, pck_ord_no: int, pck_data: bytes):
         self.__packets[pck_ord_no] = pck_data
@@ -131,8 +175,7 @@ class Message:
             idx = (32 + self.tkn_length * 8)
             self.token = bits_to_int(self.raw_request[32:idx])
 
-        self.options = [[]]
-        self.options.remove([])
+        self.options = dict()
         prev_option_number = 0
         option_nr = 0
 
@@ -167,20 +210,20 @@ class Message:
                     if option_length < 13:
                         option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (
                                 ext_delta_bytes + option_length + 1) * 8]).tobytes().decode("utf-8")
-                        self.options.append([option_number, option_value])
+                        self.options[option_number] = option_value
                     elif option_length == 13:
                         option_length = bits_to_int(
                             self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (ext_delta_bytes + 2) * 8]) - 13
                         option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 2):idx + (
                                 ext_delta_bytes + option_length + 2) * 8]).tobytes().decode("utf-8")
-                        self.options.append([option_number, option_value])
+                        self.options[option_number] = option_value
                         ext_option_bytes = 1
                     elif option_length == 14:
                         option_length = bits_to_int(
                             self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (ext_delta_bytes + 3) * 8]) - 269
                         option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 3):idx + (
                                 ext_delta_bytes + option_length + 3) * 8]).tobytes().decode("utf-8")
-                        self.options.append([option_number, option_value])
+                        self.options[option_number] = option_value
                         ext_option_bytes = 2
                     else:
                         self.invalid_reasons.append(
@@ -252,74 +295,74 @@ class Message:
         # options[idx][1] - option value
         prev_option_nr = 0
 
-        for idx in range(len(self.options)):
+        for opt_no in self.options:
 
-            if len(self.options[idx][1].encode('utf-8')) > 0:
-                option_delta = self.options[idx][0] - prev_option_nr
-                prev_option_nr = self.options[idx][0]
+            if len(self.options[opt_no].encode('utf-8')) > 0:
+                option_delta = opt_no - prev_option_nr
+                prev_option_nr = opt_no
 
                 if option_delta < 13:
                     result = self.__method(result, option_delta, 1, False)
 
-                    if len(self.options[idx][1].encode('utf-8')) < 13:
-                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')), 1, False)
+                    if len(self.options[opt_no].encode('utf-8')) < 13:
+                        result = self.__method(result, len(self.options[opt_no].encode('utf-8')), 1, False)
 
-                    elif len(self.options[idx][1].encode('utf-8')) < 243:  # 256-13
+                    elif len(self.options[opt_no].encode('utf-8')) < 243:  # 256-13
                         result = self.__method(result, 13, 1, False)
-                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 13, 1, True)
+                        result = self.__method(result, len(self.options[opt_no].encode('utf-8')) + 13, 1, True)
 
-                    elif len(self.options[idx][1].encode('utf-8')) < 65266:  # 65535-269
+                    elif len(self.options[opt_no].encode('utf-8')) < 65266:  # 65535-269
                         result = self.__method(result, 14, 1, False)
-                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 269, 2, True)
+                        result = self.__method(result, len(self.options[opt_no].encode('utf-8')) + 269, 2, True)
                     else:
                         self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
-                            len(self.options[idx][1].encode('utf-8'))))
+                            len(self.options[opt_no].encode('utf-8'))))
                         raise Exception
 
                 elif option_delta < 243:
                     result = self.__method(result, 13, 1, False)
 
-                    if len(self.options[idx][1].encode('utf-8')) < 13:
-                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')), 1, False)
+                    if len(self.options[opt_no].encode('utf-8')) < 13:
+                        result = self.__method(result, len(self.options[opt_no].encode('utf-8')), 1, False)
                         result = self.__method(result, option_delta + 13, 1, True)
 
-                    elif len(self.options[idx][1].encode('utf-8')) < 243:  # 256-13
+                    elif len(self.options[opt_no].encode('utf-8')) < 243:  # 256-13
                         result = self.__method(result, 13, 1, False)
                         result = self.__method(result, option_delta + 13, 1, True)
-                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 13, 1, True)
+                        result = self.__method(result, len(self.options[opt_no].encode('utf-8')) + 13, 1, True)
 
-                    elif len(self.options[idx][1].encode('utf-8')) < 65266:  # 65535-269
+                    elif len(self.options[opt_no].encode('utf-8')) < 65266:  # 65535-269
                         result = self.__method(result, 14, 1, False)
                         result = self.__method(result, option_delta + 13, 1, True)
-                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 269, 2, True)
+                        result = self.__method(result, len(self.options[opt_no].encode('utf-8')) + 269, 2, True)
                     else:
                         self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
-                            len(self.options[idx][1].encode('utf-8'))))
+                            len(self.options[opt_no].encode('utf-8'))))
                         raise Exception
 
                 elif option_delta < 65266:
                     result = self.__method(result, 14, 1, False)
 
-                    if len(self.options[idx][1].encode('utf-8')) < 13:
-                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')), 1, False)
+                    if len(self.options[opt_no].encode('utf-8')) < 13:
+                        result = self.__method(result, len(self.options[opt_no].encode('utf-8')), 1, False)
                         result = self.__method(result, option_delta + 269, 2, True)
 
-                    elif len(self.options[idx][1].encode('utf-8')) < 243:  # 256-13
+                    elif len(self.options[opt_no].encode('utf-8')) < 243:  # 256-13
                         result = self.__method(result, 13, 1, False)
                         result = self.__method(result, option_delta + 269, 2, True)
-                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 13, 1, True)
+                        result = self.__method(result, len(self.options[opt_no].encode('utf-8')) + 13, 1, True)
 
-                    elif len(self.options[idx][1].encode('utf-8')) < 65266:  # 65535-269
+                    elif len(self.options[opt_no].encode('utf-8')) < 65266:  # 65535-269
                         result = self.__method(result, 14, 1, False)
                         result = self.__method(result, option_delta + 269, 2, True)
-                        result = self.__method(result, len(self.options[idx][1].encode('utf-8')) + 269, 2, True)
+                        result = self.__method(result, len(self.options[opt_no].encode('utf-8')) + 269, 2, True)
                     else:
                         self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
-                            len(self.options[idx][1].encode('utf-8'))))
+                            len(self.options[opt_no].encode('utf-8'))))
                         raise Exception
 
                 value = bitarray()
-                bitarray.frombytes(value, self.options[idx][1].encode('utf-8'))
+                bitarray.frombytes(value, self.options[opt_no].encode('utf-8'))
                 result += value
             else:
                 self.invalid_reasons.append("__assemble_resp: lungimea optiunii este 0")
@@ -407,6 +450,7 @@ def bits_to_int(value):
 
 
 # START ------ check functions for CoAP header ------ START
+# TODO DE VERIFICAT DACA OPTIUNILE SUNT NECESARE PENTRU FUNCTIILE CARE SE DORESC A FI APELATE
 
 def check_type(msg: Message):
     return msg.type in [t.value for t in Type]
@@ -432,9 +476,18 @@ def check_token_tkl(msg: Message):
 
 
 def check_options(msg: Message):
+    option_num = [opt[0] for opt in msg.options]
+
+    # check the uniqueness of the options
+    if len(set(option_num)) != len(option_num):
+        return False
+
+    # check the order of the options and validity
+    prec_opt = msg.options[0]
     for opt in msg.options:
-        if opt[0] not in OPTIONS_NUMBERS or opt[1] is None:
+        if opt[0] not in [o.value for o in OptionNumbers] or opt[1] is None or opt[0] < prec_opt[0]:
             return False
+        prec_opt = opt
     return True
 
 
@@ -511,13 +564,11 @@ def sintatic_analizer(msg: Message) -> bool:
 
 def deduplicator(msg: Message) -> bool:
     # check if message id already exists in ReqQueue2
-    with lock_q2:
-        if msg.msg_id not in [m.msg_id for m in req_q2]:
-            req_q2.append(msg)
-            return True
-        else:
-
-            pass  # todo eventual log
+    if msg.msg_id not in req_q2.get_msg_id_list():
+        req_q2.append(msg)
+        return True
+    else:
+        pass  # todo eventual log
     return False
 
 
@@ -533,28 +584,45 @@ def gen_msg_id():
 
 """
 
+
 def service_th1_fct():
-    while len(req_q1) != 0:
-        msg: Message
-        with lock_q1:
-            msg = req_q1.pop(0)
-        if msg is not None:
+    running_th1 = True
+    while running_th1:
+        try:
+            msg: Message = req_q1.pop(0)
             if sintatic_analizer(msg):
                 if deduplicator(msg):
                     # todo awake thread 2
                     pass
+        except IndexError:
+            running_th1 = False
 
 
 def service_th2_fct():
-    while len(req_q2) != 0:
-        pass
+    running_th2 = True
+    while running_th2:
+        try:
+            msg: Message = req_q2.pop(0)
+            # TODO call request_processor
+            request_processor(msg)
+        except IndexError:
+            running_th2 = False
 
 
-"""
-def request_processor(params):  
-    #TODO
+# todo move function
+def move(src: str, dest: str):
     pass
-"""
+
+
+def request_processor(msg: Message):
+    # use shututil for moving
+
+    # check MOVE function
+    if msg.op_code in [1, 5]:
+        # move(, msg.oper_param)
+        pass
+    pass
+
 
 if __name__ == '__main__':
 
