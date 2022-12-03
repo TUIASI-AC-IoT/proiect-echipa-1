@@ -1,27 +1,56 @@
 import os
+import re
 import shutil
 from os import remove
 from os.path import *
-
-from message import Message
+from message import Message, gen_msg_id
 import general_use as gu
 
 
+def get_normalized_path(path: str):
+    return normpath(join(gu.ROOT, path))
+
+
+def path_from_options(msg):
+    fpath = msg.options[gu.OptionNumbers.LocationPath.value]
+    try:
+        fpath += '.' + msg.options[gu.OptionNumbers.ContentFormat.value]
+    except:
+        pass
+    return get_normalized_path(fpath)
+
+
+def move_(msg: Message):
+    src_name: str = path_from_options(msg)
+    dest_name: str = get_normalized_path(msg.oper_param)
+    if exists(src_name):
+        if isdir(dest_name):
+            shutil.move(src_name, dest_name)
+            # todo send success
+        else:
+            # TODO log, not moved
+            pass
+    else:
+        # TODO log,the source file name is wrong
+        pass
+
+
 def delete_(msg: Message):
-    src_name: str = msg.options[gu.OptionNumbers.LocationPath.value]
+    src_name: str = path_from_options(msg)
+
     if exists(src_name):
         if isdir(src_name):
             shutil.rmtree(src_name)
         else:
             remove(src_name)
-        # TODO SEND RESPONSE -> SUCCESS
+        # todo send success
     else:
         pass
-        # TODO SEND RESPONSE -> INVALID PATH
+        # TODO send response -> INVALID PATH
 
 
 def rename_(msg: Message):
-    src_name: str = get_normalized_path(msg.options[gu.OptionNumbers.LocationPath.value])
+    src_name: str = path_from_options(msg)
     src_path, src_f_name = split(src_name)
 
     new_name: str = get_normalized_path(msg.oper_param)
@@ -40,44 +69,64 @@ def rename_(msg: Message):
                 # TODO SEND RESPONSE -> invalid new_path
                 pass
         else:
-            # TODO SEND REPSONSE -> INVALID NEW_
+            # TODO SEND REPSONSE -> INVALID NEW_F_NAME
             pass
     else:
         pass
-        # TODO SEND RESPONSE -> INVALID PATH
+        # TODO SEND RESPONSE -> INVALID SOURCE PATH
 
 
 def create_(msg: Message):
-    fpath: str = msg.options[gu.OptionNumbers.LocationPath.value]
-    # fpath -> nu trebuie sa existe
-    # os.makedirs -> daca sirul nu se termina cu extensie de fisier
-    # daca e fisier: os.makedirs + open(file) pt creare
+    fpath: str = path_from_options(msg)
+    if not exists(fpath):
+        path, f_name = split(fpath)
+        if re.match('.+[.].+', f_name):
+            os.makedirs(path)
+            with open(fpath, 'w'):
+                pass
+        else:
+            os.makedirs(fpath)
+    else:
+        # the path exists
+        # TODO SEND RESPONSE -> INVALID PATH, ALREADY EXISTS
+        pass
 
 
 def upload_(msg: Message):
-    pass
+    if msg.token not in gu.upload_collection:
+        gu.upload_collection[msg.token] = gu.Content(path_from_options(msg), msg.options[gu.OptionNumbers.Size1.value])
+    gu.upload_collection[msg.token].add_packet(msg.ord_no, msg.oper_param)
 
 
 def download_(msg: Message):
-    pass
+    file: str = path_from_options(msg)
 
+    if isfile(file):
+        msg_to_send: Message = msg.copy_for_download()
+        msg_to_send.options[gu.OptionNumbers.Size1.value] = str(os.stat(file).st_size)
+        ord_no = 1
 
-def get_normalized_path(path: str):
-    return normpath(join(gu.ROOT, path))
+        max_value = 2 ** 16 - 1
 
+        with open(file, 'r') as f:
+            seq = f.read(gu.max_up_size - 3)  # - 3 (2 octeti pt ord_no_rule, 3 biti pentru op_code)
+            while seq != '':
+                msg_to_send.msg_id = gen_msg_id()
+                msg_to_send.ord_no = ord_no
+                msg_to_send.oper_param = seq
 
-def move_(msg: Message):
-    # variabila care retine daca operatiunea s-a efectuat sau nu, folosind direct codurile de raspuns
-    # si pe baza acesteia trimite raspunsul
-    src_name: str = get_normalized_path(msg.options[gu.OptionNumbers.LocationPath.value])
-    dest_name: str = get_normalized_path(msg.oper_param)
-    if exists(src_name):
-        if isdir(dest_name):
-            shutil.move(src_name, dest_name)
-            # TODO send response, success
-        else:
-            # TODO send response, not moved
-            pass
+                msg.send_response()
+
+                ord_no += 1
+                if ord_no > max_value:
+                    ord_no = 1
+                seq = f.read(gu.max_up_size - 3)  # read next sequence
+
+            msg_to_send.msg_id = gen_msg_id()
+            msg_to_send.ord_no = 0
+            msg_to_send.oper_param = ''
+
+            msg.send_response()
     else:
-        # TODO send response,the source file name is wrong
+        # TODO send not a file RESPONSE
         pass

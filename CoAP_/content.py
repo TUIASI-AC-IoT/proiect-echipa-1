@@ -2,11 +2,12 @@ from bitarray import *
 
 
 # clasa care contine pachetele si ordinea acestora
+# todo -> check ord_no = 0, means endof transmission
 class Content:
 
-    def __init__(self, file_path: str, file_type: str):
+    def __init__(self, file_path: str, size: int):
         self.file_path: str = file_path
-        self.file_type: str = file_type
+        self.theoretical_size: int = size
         self.__packets: dict[int, bytes] = dict()
 
     def is_valid(self):

@@ -16,7 +16,7 @@ first_run_token = True
 last_tokens = []
 running = False
 
-upload_collection: dict[Token, 'Content'] = dict()
+upload_collection: dict[Token, Content] = dict()
 
 # 2.01 | Created, 2.02 | Deleted, 2.03 | Valid,2.04 | Changed, 2.05 | Content
 # 4.00 | Bad Request, 4.02 | Bad Option, 4.04 | Not Found
@@ -40,7 +40,7 @@ total_nr_options = len(OptionNumbers)  # numarul total de optiuni posibile intr-
 
 class MsgList:
     def __init__(self):
-        self.__list: list['Message'] = list()
+        self.__list: list[Message] = list()
         self.__lock = Lock()
 
     def append(self, obj) -> None:

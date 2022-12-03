@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from bitarray import *
 from numpy import floor
 
@@ -286,6 +288,18 @@ class Message:
         else:
             pack += value[-4:]
         return pack
+
+    def copy_for_download(self):
+        msg = Message(gu.MsgType.Response)
+        msg.version = self.version
+        msg.type = self.type
+        msg.tkn_length = self.tkn_length
+        msg.code_class = self.code_class
+        msg.code_details = self.code_details
+        msg.token = self.token
+        msg.options = deepcopy(msg.options)
+        msg.op_code = self.op_code
+        return msg
 
     def __repr__(self):
         if self.is_valid:

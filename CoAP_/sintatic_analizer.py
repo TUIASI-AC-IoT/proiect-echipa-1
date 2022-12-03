@@ -6,6 +6,7 @@ def check_type(msg: Message):
     return msg.type in [t.value for t in gu.Type]
 
 
+# todo msg_type obligatoriu sa fie confirmable pentru UPLOAD, DOWNLOAD
 def check_code(msg: Message):
     if msg.msg_type == gu.MsgType.Request:
         if msg.code_class == 0 and msg.code_details in [mc.value for mc in gu.MethodCodes]:
