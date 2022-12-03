@@ -1,7 +1,9 @@
 from bitarray import *
 from numpy import floor
 
+from main import send_response
 import general_use as gu
+
 
 # clasa generica pentru mesajele coap specifice
 class Message:
@@ -35,7 +37,11 @@ class Message:
         try:
             return self.__assemble_resp()
         except:
-            return int(0).to_bytes(1, "little", sigued=False)
+            return int(0).to_bytes(1, "little", signed=False)
+
+    def send_response(self):
+        if self.is_valid:
+            send_response(self)
 
     def __disassemble_req(self):
         # obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a trei optiuni:
@@ -43,7 +49,6 @@ class Message:
         # 12 - content-format -> ascii encode
         # 60 - Size1 -> ascii encoded
         # obs2. aceste trei optiuni nu au caracteristica de a fi repetabile => prezenta a mai mult de trei optiuni indica o problema
-
 
         self.version = bits_to_int(self.raw_request[0:2])
         self.type = bits_to_int(self.raw_request[2:4])
@@ -297,7 +302,7 @@ class Message:
 
 
 def int_to_bytes(value, length):
-    return int(value).to_bytes(byteorder="big", sigued=False, length=length)
+    return int(value).to_bytes(byteorder="big", signed=False, length=length)
 
 
 def bits_to_int(value):
@@ -331,7 +336,6 @@ def lists_to_str():
 
 
 def gen_token(tkn_length_in_bits):
-
     if gu.first_run_token:
         with open("token.txt", "r") as f:
             result_list = f.read().splitlines()
