@@ -20,6 +20,12 @@ Token: TypeAlias = int
 ROOT = r''
 
 max_up_size = 65507  # max udp payload size
+first_run_msg_id = True
+msg_id_file = None
+last_msg_id = int
+token_file = None
+first_run_token = True
+last_tokens = []
 running = False
 
 upload_collection: dict[Token, 'Content'] = dict()
@@ -162,10 +168,9 @@ class Message:
     # Response specific method
     def get_raw_data(self):
         try:
-            self.__assemble_resp()
-            return self.raw_request.tobytes()
+            return self.__assemble_resp()
         except:
-            return bytes("00")
+            return int(0).to_bytes(1, "little", signed=False)
 
     def __disassemble_req(self):
         # obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a trei optiuni:
@@ -263,6 +268,8 @@ class Message:
             self.ord_no = bits_to_int(self.raw_request[idx + 3:idx + 19])
             try:
                 self.oper_param = (self.raw_request[idx + 19:]).tobytes().decode("utf-8")
+                # todo be carefull added for removing unknow aperance reason char
+                self.oper_param = self.oper_param[:len(self.oper_param) - 1]
             except Exception as e:
                 self.invalid_reasons.append("__disassemble_req:" + str(e))
                 raise e
@@ -294,15 +301,11 @@ class Message:
         result += value[-5:]
 
         # message id
-        value = bitarray()
-        bitarray.frombytes(value, int_to_bytes(self.msg_id, 2))
-        result += value
+        result = self.__method(result, self.msg_id, 2, True)
 
         # token value
         if self.tkn_length > 0:
-            value = bitarray()
-            bitarray.frombytes(value, int_to_bytes(self.token, self.tkn_length))
-            result += value
+            result = self.__method(result, self.token, self.tkn_length, True)
 
         # options
         # options[idx][0] - option nr
@@ -428,6 +431,7 @@ class Message:
 
 
 def main_th_fct():
+    # to do sync mechans for queues
     counter = 0
     while running:
         # todo de intrebat rol
@@ -443,12 +447,9 @@ def main_th_fct():
             new_request.set_raw_data(data_rcv)
             req_q1.append(new_request)
 
-            new_request2 = Message(MsgType.Response)
-            new_request2.set_raw_data(new_request.get_raw_data())
-
+            print(sintatic_analizer(new_request))
             # todo awake serv_th1
-            print("DATA ===>\n", new_request, " \n<=== FROM: ", address)
-            print("DATA ===>\n", new_request2, " \n<=== FROM: ", address)
+            print("\nDATA ===>\n", new_request, " \n<=== FROM: ", address)
             # # print("cnt= ", counter)
 
 
@@ -459,7 +460,6 @@ def int_to_bytes(value, length):
 def bits_to_int(value):
     if len(value) % 8 != 0:
         value = bitarray("0" * (int(floor((len(value) / 8) + 1) * 8) - len(value))) + value
-        # print("param=> " + str(param))
     return int.from_bytes(value.tobytes(), "big")
 
 
@@ -572,25 +572,13 @@ def sintatic_analizer(msg: Message) -> bool:
 
 def deduplicator(msg: Message) -> bool:
     # check if message id already exists in ReqQueue2
+
     if msg.msg_id not in req_q2.get_msg_id_list():
         req_q2.append(msg)
         return True
     else:
         pass  # todo eventual log
     return False
-
-
-""" 
-
-def gen_token():
-    #TODO
-    PASS
-    
-def gen_msg_id():
-    #todo
-    pass
-
-"""
 
 
 def service_th1_fct():
@@ -639,6 +627,93 @@ def move_(msg: Message):
     else:
         # TODO send response,the source file name is wrong
         pass
+
+
+
+def str_to_list(str_param: str):
+    params = str_param.split(",")
+    result = []
+    for elem in params:
+        result.append(int(elem))
+    return result
+
+
+def find_idx(len_to_search):
+    for idx in range(len(last_tokens)):
+        if last_tokens[idx][0] == len_to_search:
+            return idx
+
+    return -1
+
+
+def lists_to_str():
+    result=list()
+    for _list in last_tokens:
+        result.append(str(_list[0]) + "," + str(_list[1]))
+
+    return result
+
+
+def gen_token(tkn_length_in_bits):
+    global first_run_token
+    global token_file
+    global last_tokens
+
+    if first_run_token:
+        with open("token.txt", "r") as f:
+            result_list = f.read().splitlines()
+            token_file = f
+            token_file.close()
+        for idx in range(len(result_list)):
+            last_tokens.append(str_to_list(result_list[idx]))
+        first_run_token=False
+
+    _idx = find_idx(tkn_length_in_bits)
+    if _idx > -1:
+        if last_tokens[_idx][1]<pow(2, tkn_length_in_bits)-1:
+            result= last_tokens[_idx][1]+1
+        else:
+            result=0
+    else:
+        result= 0
+
+    token_file = open("token.txt", 'w')
+    token_file.close()
+    token_file = open("token.txt", 'a')
+    if _idx==-1:
+        last_tokens.append([tkn_length_in_bits, result])
+    else:
+        last_tokens[_idx][1]=result
+    for line in lists_to_str():
+        token_file.write(line + "\n")
+    token_file.close()
+
+    return result
+
+
+def gen_msg_id():
+    global first_run_msg_id
+    global msg_id_file
+    global last_msg_id
+    if first_run_msg_id:
+        msg_id_file = open("msg_id.txt", "r", encoding='utf-16')
+        last_msg_id = int(msg_id_file.read())
+        first_run_msg_id = False
+        msg_id_file.close()
+
+    if last_msg_id < pow(2, 16)-1:
+        last_msg_id += 1
+    else:
+        last_msg_id = 0
+
+    msg_id_file = open("msg_id.txt", 'w', encoding='utf-16')
+    msg_id_file.close()
+    msg_id_file = open("msg_id.txt", 'a', encoding='utf-16')
+    msg_id_file.write(str(last_msg_id))
+    msg_id_file.close()
+
+    return last_msg_id
+
 
 
 def delete_(msg: Message):
@@ -728,11 +803,17 @@ if __name__ == '__main__':
     while True:
         # todo control comands for basic terminal
         try:
-            useless = input("Send: ")
-            test_data = bitarray('01101101 01100101 01110011 01100001 01101010 00100000 01101101 01100101 01110011')
-            soc.sendto(test_data.tobytes(), (s_ip, int(s_port)))
+            useless = input("Send(enter):\n")
+            response =Message(MsgType.Response)
+            # set response data
+            soc.sendto(response.get_raw_data(), (s_ip, int(s_port)))
         except KeyboardInterrupt:
             running = False
             print("Waiting for the thread to close...")
             main_thread.join()
+            try:
+                msg_id_file.close()
+                token_file.close()
+            except:
+                pass
             break
