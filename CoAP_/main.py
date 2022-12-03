@@ -1,7 +1,9 @@
+import shutil
 import socket
 import sys
 import threading
 from enum import Enum, auto
+from os.path import *
 from threading import Lock
 from typing import TypeAlias
 
@@ -73,6 +75,8 @@ req_q1 = MsgList()  # request queue1
 req_q2 = MsgList()  # request queue2
 
 
+# pentru trimiterea unui raspuns care va folosi metodele PUT, GET, ... se va seta mesajul ca
+# fiind de tipul Requests
 class MsgType(Enum):
     Request = auto()
     Response = auto()
@@ -90,6 +94,16 @@ class Type(Enum):
     NON = 1
     ACK = 2
     RESET = 3
+
+
+# contains the operations codes that is assigned to the method used for request
+
+# operations_methods = {
+#     MethodCodes.GET.value: [0],
+#     MethodCodes.PUT.value: [0, 4],
+#     MethodCodes.POST.value: [1, 5],
+#     MethodCodes.DELETE.value: [2, 6]
+# }
 
 
 # clasa care contine pachetele si ordinea acestora
@@ -124,7 +138,7 @@ class Message:
         self.oper_param: str
         self.ord_no: int
         self.op_code: int
-        self.options = None
+        self.options: dict[int, str] = dict()
         self.token: int
         self.msg_id: int
         self.code_details: int
@@ -295,7 +309,7 @@ class Message:
         # options[idx][1] - option value
         prev_option_nr = 0
 
-        for opt_no in self.options:
+        for opt_no in sorted(self.options.keys()):
 
             if len(self.options[opt_no].encode('utf-8')) > 0:
                 option_delta = opt_no - prev_option_nr
@@ -462,7 +476,7 @@ def check_code(msg: Message):
             return True
     else:
         if msg.code_class in RESPONSE_CODES.keys():
-            if msg.code_details in RESPONSE_CODES[msg.code_details]:
+            if msg.code_details in RESPONSE_CODES[msg.code_class]:
                 return True
     return False
 
@@ -476,21 +490,14 @@ def check_token_tkl(msg: Message):
 
 
 def check_options(msg: Message):
-    option_num = [opt[0] for opt in msg.options]
-
-    # check the uniqueness of the options
-    if len(set(option_num)) != len(option_num):
-        return False
-
-    # check the order of the options and validity
-    prec_opt = msg.options[0]
     for opt in msg.options:
-        if opt[0] not in [o.value for o in OptionNumbers] or opt[1] is None or opt[0] < prec_opt[0]:
+        if opt not in [o.value for o in OptionNumbers] or msg.options[opt] is None:
             return False
-        prec_opt = opt
     return True
 
 
+# todo + pentru fiecare code, metoda(PUT, GET, POST, DELETE) corespunde cu op_code-ul mesajului
+# todo - optiuni obligatorii pt op_code
 def check_op_code(msg: Message):
     return 0 <= msg.op_code <= 7
 
@@ -521,6 +528,7 @@ def check_oper_param(msg: Message):
     return result
 
 
+# TODO END
 # END ------ check functions for CoAP header ------ END
 
 # functions that check the header without the payload part
@@ -609,19 +617,74 @@ def service_th2_fct():
             running_th2 = False
 
 
-# todo move function
-def move(src: str, dest: str):
+def get_normalized_path(path: str):
+    return normpath(join(ROOT, path))
+
+
+def move_(msg: Message):
+    # variabila care retine daca operatiunea s-a efectuat sau nu, folosind direct codurile de raspuns
+    # si pe baza acesteia trimite raspunsul
+    src_name: str = get_normalized_path(msg.options[OptionNumbers.LocationPath.value])
+    dest_name: str = get_normalized_path(msg.oper_param)
+    if exists(src_name):
+        # 2 optiuni:    - fie este obligatoriu ca dest_name sa existe
+        #               - fie se creeaza folder-ul daca nu exista
+        # conditie: dest_name trebuie sa fie director
+        if isdir(dest_name):
+            shutil.move(src_name, dest_name)
+            # TODO send response, success
+        else:
+            # TODO send response, not moved
+            pass
+    else:
+        # TODO send response,the source file name is wrong
+        pass
+
+
+def delete_(msg: Message):
+    src_name: str = msg.options[OptionNumbers.LocationPath.value]
+    # shutil.rmtree -> for directories
+    #  os.remove -> for files
+
+
+def rename_(msg: Message):
+    src_name: str = get_normalized_path(msg.options[OptionNumbers.LocationPath.value])
+    new_name: str = msg.oper_param
+    # os.rename
+    # new_name  -> fie e toata calea si numele e schimbat
+    #           -> fie e doar numele nou
+
+
+def create_(msg: Message):
+    fpath: str = msg.options[OptionNumbers.LocationPath.value]
+    # fpath -> nu trebuie sa existe
+    # os.makedirs -> daca sirul nu se termina cu extensie de fisier
+    # daca e fisier: os.makedirs + open(file) pt creare
+
+
+def upload_(msg: Message):
+    pass
+
+
+def download_(msg: Message):
     pass
 
 
 def request_processor(msg: Message):
-    # use shututil for moving
-
-    # check MOVE function
-    if msg.op_code in [1, 5]:
-        # move(, msg.oper_param)
-        pass
-    pass
+    if msg.op_code in [1, 5]:  # check MOVE function
+        move_(msg)
+    elif msg.op_code in [2, 6]:  # check if delete function
+        delete_(msg)
+    elif msg.op_code in [3, 7]:  # check if rename function
+        rename_(msg)
+    elif msg.op_code == 4:  # check if create function
+        create_(msg)
+    elif msg.op_code == 0:
+        # TODO de reverificat daca e garantat acest lucru
+        if msg.code_details == MethodCodes.PUT.value:
+            upload_(msg)
+        else:
+            download_(msg)
 
 
 if __name__ == '__main__':
