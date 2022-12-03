@@ -4,7 +4,7 @@ import select
 import threading
 
 #py main.py --r_port=65416 --s_port=65415 --s_ip=192.168.0.103
-from bitarray import bitarray
+from bitarray import *
 
 
 def receive_fct():
