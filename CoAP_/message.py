@@ -1,6 +1,7 @@
 from bitarray import *
 from numpy import floor
 
+from main import send_response
 import general_use as gu
 
 
@@ -37,6 +38,10 @@ class Message:
             return self.__assemble_resp()
         except:
             return int(0).to_bytes(1, "little", signed=False)
+
+    def send_response(self):
+        if self.is_valid:
+            send_response(self)
 
     def __disassemble_req(self):
         # obs1. s-a luat in considerare pentru aceasta aplicatie doar utilizarea a trei optiuni:

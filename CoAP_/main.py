@@ -10,6 +10,22 @@ from sintatic_analizer import sintatic_analizer
 
 # py main.py --r_port=65415 --s_port=65416 --s_ip=192.168.0.103
 
+def receive_request():
+    data_rcv, address = soc.recvfrom(gu.max_up_size)
+    new_request = Message(gu.MsgType.Request)
+    new_request.set_raw_data(data_rcv)
+    gu.req_q1.append(new_request)
+    print("\nDATA ===>\n", new_request, " \n<=== FROM: ", address)
+
+
+def send_response(response: Message):
+    soc.sendto(response.get_raw_data(), (s_ip, int(s_port)))
+
+
+def cmd_interpreter(cmd: str):
+    # todo
+    pass
+
 
 def main_th_fct():
     # to do sync mechans for queues
@@ -23,14 +39,8 @@ def main_th_fct():
             counter = counter + 1
             # todo de intrebat rol
         else:
-            data_rcv, address = soc.recvfrom(gu.max_up_size)
-            new_request = Message(gu.MsgType.Request)
-            new_request.set_raw_data(data_rcv)
-            gu.req_q1.append(new_request)
-
-            print(sintatic_analizer(new_request))
+            receive_request()
             # todo awake serv_th1
-            print("\nDATA ===>\n", new_request, " \n<=== FROM: ", address)
             # # print("cnt= ", counter)
 
 
@@ -75,14 +85,16 @@ if __name__ == '__main__':
     while True:
         # todo control comands for basic terminal
         try:
-            useless = input("Send(enter):\n")
-            response = Message(gu.MsgType.Response)
-            # set response data
-            soc.sendto(response.get_raw_data(), (s_ip, int(s_port)))
+            cmd = input("Working (CTRL+C to stop):\n")
+
+            if cmd != "":
+                cmd_interpreter(cmd)
+
         except KeyboardInterrupt:
             running = False
             print("Waiting for the thread to close...")
             main_thread.join()
+            # todo stop other th
             try:
                 gu.msg_id_file.close()
                 gu.token_file.close()
