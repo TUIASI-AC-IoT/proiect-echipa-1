@@ -102,26 +102,33 @@ class Message:
                     if option_length < 13:
                         option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (
                                 ext_delta_bytes + option_length + 1) * 8]).tobytes().decode("utf-8")
-                        self.options[option_number] = option_value
+
                     elif option_length == 13:
                         option_length = bits_to_int(
                             self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (ext_delta_bytes + 2) * 8]) - 13
                         option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 2):idx + (
                                 ext_delta_bytes + option_length + 2) * 8]).tobytes().decode("utf-8")
-                        self.options[option_number] = option_value
+
                         ext_option_bytes = 1
                     elif option_length == 14:
                         option_length = bits_to_int(
                             self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (ext_delta_bytes + 3) * 8]) - 269
                         option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 3):idx + (
                                 ext_delta_bytes + option_length + 3) * 8]).tobytes().decode("utf-8")
-                        self.options[option_number] = option_value
                         ext_option_bytes = 2
                     else:
                         self.invalid_reasons.append(
                             "__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(
                                 option_length))
                         raise Exception
+
+                    # add the option if it is not already added, or raise Exception if it is
+                    if option_number in self.options.keys():
+                        self.is_valid = False
+                        self.invalid_reasons.append(
+                            "__disassemble_req:option value is duplicated " + str(option_value))
+                        raise Exception
+                    self.options[option_number] = option_value
                 else:
                     self.invalid_reasons.append(
                         "__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(option_length))
@@ -312,7 +319,10 @@ class Message:
                    "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
                    "\nord_no: " + str(self.ord_no) + "\noper_param: " + str(self.oper_param)
         else:
-            return "Invalid request. Check reasons: " + str(self.invalid_reasons)
+            if len(self.invalid_reasons) != 0:
+                return "Invalid message. Check reasons: " + str(self.invalid_reasons)
+            else:
+                return "Invalid message. Uncheck or unknown reason."
 
 
 def int_to_bytes(value, length):

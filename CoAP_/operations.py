@@ -11,12 +11,10 @@ def get_normalized_path(path: str):
     return normpath(join(gu.ROOT, path))
 
 
-def path_from_options(msg):
+def path_from_options(msg: Message):
     fpath = msg.options[gu.OptionNumbers.LocationPath.value]
-    try:
+    if msg.op_code <= 3:
         fpath += '.' + msg.options[gu.OptionNumbers.ContentFormat.value]
-    except:
-        pass
     return get_normalized_path(fpath)
 
 
@@ -80,7 +78,7 @@ def create_(msg: Message):
     fpath: str = path_from_options(msg)
     if not exists(fpath):
         path, f_name = split(fpath)
-        if re.match('.+[.].+', f_name):
+        if msg.op_code <= 3:
             os.makedirs(path)
             with open(fpath, 'w'):
                 pass
