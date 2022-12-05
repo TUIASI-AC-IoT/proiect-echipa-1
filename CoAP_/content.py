@@ -1,7 +1,7 @@
 from bitarray import *
 
 
-# clasa care contine pachetele si ordinea acestora
+# clasa care contine pachetele (componente ale unui fisier) si ordinea acestora
 # todo -> check ord_no = 0, means endof transmission
 class Content:
 
