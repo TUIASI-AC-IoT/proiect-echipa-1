@@ -1,3 +1,5 @@
+import logging
+import logging as log
 from enum import Enum, auto
 from threading import Lock
 
@@ -15,6 +17,7 @@ token_file = None
 first_run_token = True
 last_tokens = []
 running = False
+log.basicConfig(filename="log.txt",filemode="a",level=logging.INFO,format='%(asctime)s :: %(levelname)-8s :: %(message)s')
 
 upload_collection: dict[Token, Content] = dict()
 
@@ -30,7 +33,6 @@ class MethodCodes(Enum):
 
 
 MESSAGE_CODES = {
-    0: [m.value for m in MethodCodes],
     2: [1, 2, 4, 5],
     4: [0, 2, 4],
     5: [0]

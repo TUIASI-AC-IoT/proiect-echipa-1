@@ -4,11 +4,6 @@ import threading
 from enum import Enum, auto
 from threading import Lock
 from typing import TypeAlias
-
-<<<<<<< HEAD
-#py main.py --r_port=65416 --s_port=65415 --s_ip=192.168.0.103
-from bitarray import *
-=======
 import select
 from bitarray import *
 from numpy import floor
@@ -182,10 +177,10 @@ class Message:
         if bits_to_int(self.raw_request[idx:idx + 8]) == int(0xFF):
             self.is_valid = True
             idx += 8
-            self.op_code = bits_to_int(self.raw_request[idx:idx + 3])
-            self.ord_no = bits_to_int(self.raw_request[idx + 3:idx + 19])
+            self.op_code = bits_to_int(self.raw_request[idx:idx + 4])
+            self.ord_no = bits_to_int(self.raw_request[idx + 4:idx + 20])
             try:
-                self.oper_param = (self.raw_request[idx + 19:]).tobytes().decode("utf-8")
+                self.oper_param = (self.raw_request[idx + 20:]).tobytes().decode("utf-8")
                 # todo be carefull added for removing unknow aperance reason char
                 self.oper_param = self.oper_param[:len(self.oper_param) - 1]
             except Exception as e:
@@ -311,7 +306,7 @@ class Message:
         # operation code
         value = bitarray()
         bitarray.frombytes(value, int_to_bytes(self.op_code, 1))
-        result += value[-3:]
+        result += value[-4:]
 
         # order number
         value = bitarray()
@@ -356,7 +351,6 @@ def bits_to_int(value):
     if len(value) % 8 != 0:
         value = bitarray("0" * (int(floor((len(value) / 8) + 1) * 8) - len(value))) + value
     return int.from_bytes(value.tobytes(), "big")
->>>>>>> 9cc9f85455a99563a1fe641c2830b8217ecda06a
 
 
 def receive_fct():

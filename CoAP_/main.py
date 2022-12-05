@@ -5,8 +5,6 @@ import threading
 
 import general_use as gu
 from message import Message
-from sintatic_analizer import sintatic_analizer
-
 
 # py main.py --r_port=65415 --s_port=65416 --s_ip=192.168.0.103
 
@@ -23,8 +21,7 @@ def send_response(response: Message):
 
 
 def cmd_interpreter(cmd: str):
-    # todo
-    pass
+    print("Unknown command: " + cmd + "\n")
 
 
 def main_th_fct():
