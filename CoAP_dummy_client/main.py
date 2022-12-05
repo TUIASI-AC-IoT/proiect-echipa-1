@@ -5,6 +5,10 @@ from enum import Enum, auto
 from threading import Lock
 from typing import TypeAlias
 
+<<<<<<< HEAD
+#py main.py --r_port=65416 --s_port=65415 --s_ip=192.168.0.103
+from bitarray import *
+=======
 import select
 from bitarray import *
 from numpy import floor
@@ -352,6 +356,7 @@ def bits_to_int(value):
     if len(value) % 8 != 0:
         value = bitarray("0" * (int(floor((len(value) / 8) + 1) * 8) - len(value))) + value
     return int.from_bytes(value.tobytes(), "big")
+>>>>>>> 9cc9f85455a99563a1fe641c2830b8217ecda06a
 
 
 def receive_fct():
