@@ -6,6 +6,7 @@ import threading
 import general_use as gu
 from message import Message
 
+
 # py main.py --r_port=65415 --s_port=65416 --s_ip=192.168.0.103
 
 def receive_request():
@@ -13,7 +14,8 @@ def receive_request():
     new_request = Message(gu.MsgType.Request)
     new_request.set_raw_data(data_rcv)
     gu.req_q1.append(new_request)
-    print("\nDATA ===>\n", new_request, " \n<=== FROM: ", address)
+    print("\nRECEIVED:\n", new_request, "\nFROM: ", address)
+    gu.log.info("\nRECEIVED:\n "+str(new_request)+"\nFROM:"+str(address))
 
 
 def send_response(response: Message):

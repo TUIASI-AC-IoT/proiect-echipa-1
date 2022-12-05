@@ -13,8 +13,8 @@ class Message:
         self.ord_no: int
         self.op_code: int
         self.options: dict[int, str] = dict()
-        self.token: int
-        self.msg_id: int
+        self.token: int = None
+        self.msg_id: int = None
         self.code_details: int
         self.code_class: int
         self.tkn_length: int
@@ -23,6 +23,10 @@ class Message:
         self.raw_request = bitarray()
         self.msg_type = msg_type
         self.is_valid = False
+        self.invalid_code = -1  # for disassemble_req
+        # 0 - payload
+        # 2 - option
+        # 1 || -1 - unknowed
         self.invalid_reasons = []
 
     # Request specific method
@@ -30,13 +34,24 @@ class Message:
         bitarray.frombytes(self.raw_request, raw_request)
         try:
             self.__disassemble_req()
+            gu.log.info("set_raw_data(): __disassemble_req() successful (msg_id:" + str(self.msg_id) + ", token:" + str(
+                self.token) + ")")
         except:
             self.is_valid = False
 
     # Response specific method
     def get_raw_data(self):
         try:
-            return self.__assemble_resp()
+            if self.is_valid:
+                bytes_ = self.__assemble_resp()
+                gu.log.info(
+                    "get_raw_data(): __assemble_resp() successful (msg_id:" + str(self.msg_id) + ", token:" + str(
+                        self.token) + ")")
+                return bytes_
+            else:
+                gu.log.error(
+                    "get_raw_data(): is_valid=False (msg_id:" + str(self.msg_id) + ", token:" + str(self.token) + ")")
+                raise Exception
         except:
             return int(0).to_bytes(1, "little", signed=False)
 
@@ -52,6 +67,10 @@ class Message:
         # 60 - Size1 -> ascii encoded
         # obs2. aceste trei optiuni nu au caracteristica de a fi repetabile => prezenta a mai mult de trei optiuni indica o problema
 
+        # is_valid = False daca:
+        # delta, lungimea sau valoarea (duplicata) sunt malformate sau incorect ca format pentru o optiune
+        # payload-ul este malformat sau incorect ca format
+
         self.version = bits_to_int(self.raw_request[0:2])
         self.type = bits_to_int(self.raw_request[2:4])
         self.tkn_length = bits_to_int(self.raw_request[4:8])
@@ -59,100 +78,129 @@ class Message:
         self.code_details = bits_to_int(self.raw_request[11:16])
         self.msg_id = bits_to_int(self.raw_request[16:32])
 
-        idx = 32
-        self.token = 0
-
-        # for token
-        if self.tkn_length > 0:
-            idx = (32 + self.tkn_length * 8)
-            self.token = bits_to_int(self.raw_request[32:idx])
-
-        self.options = dict()
-        prev_option_number = 0
-        option_nr = 0
-
-        # for options
-
-        while bits_to_int(self.raw_request[idx:idx + 8]) != int(0xFF) and option_nr < gu.total_nr_options:
-            ext_delta_bytes = 0  # extra delta bytes
-            ext_option_bytes = 0  # extra length bytes
-
-            # option_delta
-            option_number = bits_to_int(self.raw_request[idx:idx + 4])
-
-            if option_number < 13:
-                option_number += prev_option_number
-            elif option_number == 13:
-                option_number = bits_to_int(self.raw_request[idx + 8:idx + 16]) - 13 + prev_option_number
-                ext_delta_bytes = 1
-            elif option_number == 14:
-                option_number = bits_to_int(self.raw_request[idx + 8:idx + 24]) - 269 + prev_option_number
-                ext_delta_bytes = 2
-            else:
-                self.invalid_reasons.append(
-                    "__disassemble_req: Option delta incorect (teoretic 15, practic >=15): " + str(option_number))
-                raise Exception
-            prev_option_number = option_number
-
-            # option length
-            option_length = bits_to_int(self.raw_request[idx + 4:idx + 8])
-
+        if self.code_class == 0 and self.code_details == 0:
             try:
-                if option_length > 0:
-                    if option_length < 13:
-                        option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (
-                                ext_delta_bytes + option_length + 1) * 8]).tobytes().decode("utf-8")
+                content = self.raw_request[32]
+                self.is_valid = False
+                self.invalid_reasons.append(
+                    "__disassemble_req: 0.00-extra data: " + str(self.raw_request[32:]))
+                gu.log.error("__disassemble_req: 0.00-extra data: " + str(self.raw_request[32:]) + " (msg_id:" + str(
+                    self.msg_id) + ")")
+            except:
+                self.is_valid = True
+        else:
+            # for token
+            idx = 32
+            self.token = 0
 
-                    elif option_length == 13:
-                        option_length = bits_to_int(
-                            self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (ext_delta_bytes + 2) * 8]) - 13
-                        option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 2):idx + (
-                                ext_delta_bytes + option_length + 2) * 8]).tobytes().decode("utf-8")
+            if self.tkn_length > 0:
+                idx = (32 + self.tkn_length * 8)
+                self.token = bits_to_int(self.raw_request[32:idx])
 
-                        ext_option_bytes = 1
-                    elif option_length == 14:
-                        option_length = bits_to_int(
-                            self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (ext_delta_bytes + 3) * 8]) - 269
-                        option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 3):idx + (
-                                ext_delta_bytes + option_length + 3) * 8]).tobytes().decode("utf-8")
-                        ext_option_bytes = 2
+            # for options
+            self.options = dict()
+            prev_option_number = 0
+            option_nr = 0
+
+            while bits_to_int(self.raw_request[idx:idx + 8]) != int(0xFF) and option_nr < gu.total_nr_options:
+                ext_delta_bytes = 0  # extra delta bytes
+                ext_option_bytes = 0  # extra length bytes
+
+                # option_delta
+                option_number = bits_to_int(self.raw_request[idx:idx + 4])
+
+                if option_number < 13:
+                    option_number += prev_option_number
+                elif option_number == 13:
+                    option_number = bits_to_int(self.raw_request[idx + 8:idx + 16]) - 13 + prev_option_number
+                    ext_delta_bytes = 1
+                elif option_number == 14:
+                    option_number = bits_to_int(self.raw_request[idx + 8:idx + 24]) - 269 + prev_option_number
+                    ext_delta_bytes = 2
+                else:
+                    self.invalid_reasons.append(
+                        "__disassemble_req: Option delta incorect (teoretic 15, practic >=15): " + str(option_number))
+                    gu.log.error("__disassemble_req: Option delta incorect (teoretic 15, practic >=15): " + str(
+                        option_number) + " (msg_id:" + str(self.msg_id) + ", token:" + str(self.token) + ")")
+                    self.invalid_code = 2
+                    raise Exception
+                prev_option_number = option_number
+
+                # option length
+                option_length = bits_to_int(self.raw_request[idx + 4:idx + 8])
+
+                try:
+                    if option_length > 0:
+                        if option_length < 13:
+                            option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (
+                                    ext_delta_bytes + option_length + 1) * 8]).tobytes().decode("utf-8")
+
+                        elif option_length == 13:
+                            option_length = bits_to_int(
+                                self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (ext_delta_bytes + 2) * 8]) - 13
+                            option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 2):idx + (
+                                    ext_delta_bytes + option_length + 2) * 8]).tobytes().decode("utf-8")
+
+                            ext_option_bytes = 1
+                        elif option_length == 14:
+                            option_length = bits_to_int(
+                                self.raw_request[idx + 8 * (ext_delta_bytes + 1):idx + (ext_delta_bytes + 3) * 8]) - 269
+                            option_value = (self.raw_request[idx + 8 * (ext_delta_bytes + 3):idx + (
+                                    ext_delta_bytes + option_length + 3) * 8]).tobytes().decode("utf-8")
+                            ext_option_bytes = 2
+                        else:
+                            self.invalid_reasons.append(
+                                "__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(
+                                    option_length))
+                            gu.log.error("__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(
+                                option_length) + " (msg_id:" + str(self.msg_id) + ", token:" + str(self.token) + ")")
+                            self.invalid_code = 2
+                            raise Exception
+
+                        # add the option if it is not already added, or raise Exception if it is
+                        if option_number in self.options.keys():
+                            self.invalid_reasons.append(
+                                "__disassemble_req:option value is duplicated " + str(option_value))
+                            gu.log.error(
+                                "__disassemble_req:option value is duplicated " + str(option_value) + " (msg_id:" + str(
+                                    self.msg_id) + ", token:" + str(self.token) + ")")
+                            self.invalid_code = 2
+                            raise Exception
+                        self.options[option_number] = option_value
                     else:
                         self.invalid_reasons.append(
                             "__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(
                                 option_length))
+                        gu.log.error("__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(
+                            option_length) + " (msg_id:" + str(self.msg_id) + ", token:" + str(self.token) + ")")
+                        self.invalid_code = 2
                         raise Exception
 
-                    # add the option if it is not already added, or raise Exception if it is
-                    if option_number in self.options.keys():
-                        self.is_valid = False
-                        self.invalid_reasons.append(
-                            "__disassemble_req:option value is duplicated " + str(option_value))
-                        raise Exception
-                    self.options[option_number] = option_value
-                else:
-                    self.invalid_reasons.append(
-                        "__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(option_length))
-                    raise Exception
+                    idx = idx + (ext_delta_bytes + option_length + ext_option_bytes + 1) * 8
+                    option_nr += 1
+                except Exception as e:
+                    self.invalid_reasons.append("__disassemble_req:" + str(e))
+                    gu.log.error("__disassemble_req:" + str(e) + " (msg_id:" + str(self.msg_id) + ", token:" + str(
+                        self.token) + ")")
+                    self.invalid_code = 1
+                    raise e
 
-                idx = idx + (ext_delta_bytes + option_length + ext_option_bytes + 1) * 8
-                option_nr += 1
-            except Exception as e:
-                self.invalid_reasons.append("__disassemble_req:" + str(e))
-                raise e
-
-        # for coap payload
-        if bits_to_int(self.raw_request[idx:idx + 8]) == int(0xFF):
-            self.is_valid = True
-            idx += 8
-            self.op_code = bits_to_int(self.raw_request[idx:idx + 4])
-            self.ord_no = bits_to_int(self.raw_request[idx + 4:idx + 20])
-            try:
-                self.oper_param = (self.raw_request[idx + 20:]).tobytes().decode("utf-8")
-                # todo be carefull added for removing unknow aperance reason char
-                self.oper_param = self.oper_param[:len(self.oper_param) - 1]
-            except Exception as e:
-                self.invalid_reasons.append("__disassemble_req:" + str(e))
-                raise e
+            # for coap payload
+            if bits_to_int(self.raw_request[idx:idx + 8]) == int(0xFF):
+                try:
+                    idx += 8
+                    self.op_code = bits_to_int(self.raw_request[idx:idx + 4])
+                    self.ord_no = bits_to_int(self.raw_request[idx + 4:idx + 20])
+                    self.oper_param = (self.raw_request[idx + 20:]).tobytes().decode("utf-8")
+                    # todo be carefull added for removing unknow aperance reason char
+                    self.oper_param = self.oper_param[:len(self.oper_param) - 1]
+                    self.is_valid = True
+                except Exception as e:
+                    self.invalid_reasons.append("__disassemble_req:" + str(e))
+                    gu.log.error("__disassemble_req:" + str(e) + " (msg_id:" + str(self.msg_id) + ", token:" + str(
+                        self.token) + ")")
+                    self.invalid_code = 0
+                    raise e
 
     def __assemble_resp(self):
         # version
@@ -182,6 +230,9 @@ class Message:
 
         # message id
         result = self.__method(result, self.msg_id, 2, True)
+
+        if self.code_class==0 and self.code_details==0:
+            return result.tobytes()
 
         # token value
         if self.tkn_length > 0:
@@ -214,6 +265,9 @@ class Message:
                     else:
                         self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
                             len(self.options[opt_no].encode('utf-8'))))
+                        gu.log.error("__assemble_resp: lungimea optiunii invalida: " + str(
+                            len(self.options[opt_no].encode('utf-8'))) + " (msg_id:" + str(
+                            self.msg_id) + ", token:" + str(self.token) + ")")
                         raise Exception
 
                 elif option_delta < 243:
@@ -235,6 +289,9 @@ class Message:
                     else:
                         self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
                             len(self.options[opt_no].encode('utf-8'))))
+                        gu.log.error("__assemble_resp: lungimea optiunii invalida: " + str(
+                            len(self.options[opt_no].encode('utf-8'))) + " (msg_id:" + str(
+                            self.msg_id) + ", token:" + str(self.token) + ")")
                         raise Exception
 
                 elif option_delta < 65266:
@@ -256,6 +313,9 @@ class Message:
                     else:
                         self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
                             len(self.options[opt_no].encode('utf-8'))))
+                        gu.log.error("__assemble_resp: lungimea optiunii invalida: " + str(
+                            len(self.options[opt_no].encode('utf-8'))) + " (msg_id:" + str(
+                            self.msg_id) + ", token:" + str(self.token) + ")")
                         raise Exception
 
                 value = bitarray()
@@ -263,6 +323,9 @@ class Message:
                 result += value
             else:
                 self.invalid_reasons.append("__assemble_resp: lungimea optiunii este 0")
+                gu.log.error(
+                    "__assemble_resp: lungimea optiunii este 0" + " (msg_id:" + str(self.msg_id) + ", token:" + str(
+                        self.token) + ")")
                 raise Exception
 
         # payload marker
@@ -284,6 +347,8 @@ class Message:
         value = bitarray()
         bitarray.frombytes(value, self.oper_param.encode('utf-8'))
         result += value
+
+        self.is_valid = True
 
         return result.tobytes()
 
@@ -310,19 +375,29 @@ class Message:
 
     def __repr__(self):
         if self.is_valid:
-            return "raw_req: " + str(self.raw_request).replace("bitarray('", "").replace("')",
-                                                                                         "") + "\nversion: " + str(
-                self.version) + \
-                   "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
-                   "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
-                   "\nmsg_id: " + str(self.msg_id) + "\ntoken: " + str(self.token) + \
-                   "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
-                   "\nord_no: " + str(self.ord_no) + "\noper_param: " + str(self.oper_param)
+            if self.code_class == 0 and self.code_details == 0:
+                return "version: " + str(
+                    self.version) + \
+                       "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
+                       "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
+                       "\nmsg_id: " + str(self.msg_id)
+            else:
+                return "version: " + str(
+                    self.version) + \
+                       "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
+                       "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
+                       "\nmsg_id: " + str(self.msg_id) + "\ntoken: " + str(self.token) + \
+                       "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
+                       "\nord_no: " + str(self.ord_no) + "\noper_param: " + str(self.oper_param)
         else:
             if len(self.invalid_reasons) != 0:
+                gu.log.info("Invalid message. Check reasons: " + str(self.invalid_reasons) + " (msg_id:" + str(
+                    self.msg_id) + ", token:" + str(self.token) + ")")
                 return "Invalid message. Check reasons: " + str(self.invalid_reasons)
             else:
-                return "Invalid message. Uncheck or unknown reason."
+                gu.log.info("Invalid message. Uncheck or unknown reason, check log file." + " (msg_id:" + str(
+                    self.msg_id) + ", token:" + str(self.token) + ")")
+                return "Invalid message. Uncheck or unknown reason, check log file."
 
 
 def int_to_bytes(value, length):
