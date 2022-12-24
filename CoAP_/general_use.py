@@ -17,34 +17,27 @@ token_file = None
 first_run_token = True
 last_tokens = []
 running = False
-log.basicConfig(filename="log.txt",filemode="a",level=logging.INFO,format='%(asctime)s :: %(levelname)-8s :: %(message)s')
+log.basicConfig(filename="log.txt", filemode="a", level=logging.INFO,
+                format='%(asctime)s :: %(levelname)-8s :: %(message)s')
 
 upload_collection: dict[Token, Content] = dict()
 
+# GET = 1, POST = 2, PUT = 3, DELETE = 4, JOMAG4 = 5
+GET, POST, PUT, DELETE, JOMAG4 = 1, 2, 3, 4, 5
+MethodCodes = [GET, POST, PUT, DELETE, JOMAG4]
 
-# 2.01 | Created, 2.02 | Deleted, 2.03 | Valid,2.04 | Changed, 2.05 | Content
-# 4.00 | Bad Request, 4.02 | Bad Option, 4.04 | Not Found
-# 5.00 | Internal Server Error
-class MethodCodes(Enum):
-    GET = 1
-    POST = 2
-    PUT = 3
-    DELETE = 4
-
-
+# 2.01 = Created, 2.02 = Deleted, 2.04 = Changed, 2.05 = Content
+# 4.00 = Bad Request, 4.02 = Bad Option, 4.04 = Not Found
+# 5.00 = Internal Server Error
 MESSAGE_CODES = {
     2: [1, 2, 4, 5],
     4: [0, 2, 4],
     5: [0]
 }
 
-
-# 8 | Location-Path, 12 | Content-Format, 60 | Size1
-class OptionNumbers(Enum):
-    LocationPath = 8
-    ContentFormat = 12
-    Size1 = 60
-
+# 8 = Location-Path, 12 = Content-Format, 60 = Size1
+LocationPath, ContentFormat, Size1 = 8, 12, 60
+OptionNumbers = [LocationPath, ContentFormat, Size1]
 
 total_nr_options = len(OptionNumbers)  # numarul total de optiuni posibile intr-un mesaj
 
@@ -80,8 +73,6 @@ req_q1 = MsgList()  # request queue1
 req_q2 = MsgList()  # request queue2
 
 
-# pentru trimiterea unui raspuns care va folosi metodele PUT, GET, ... se va seta mesajul ca
-# fiind de tipul Requests
 class MsgType(Enum):
     Request = auto()
     Response = auto()

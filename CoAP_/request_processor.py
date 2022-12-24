@@ -10,10 +10,11 @@ def get_normalized_path(path: str):
     return normpath(join(gu.ROOT, path))
 
 
+# todo -> pg 92 coap -> codificare media type?
 def path_from_options(msg: Message):
-    fpath = msg.options[gu.OptionNumbers.LocationPath.value]
-    if msg.op_code <= 3:
-        fpath += '.' + msg.options[gu.OptionNumbers.ContentFormat.value]
+    fpath = msg.options[gu.LocationPath]
+    if msg.op_code <= 4:
+        fpath += '.' + msg.options[gu.ContentFormat]
     return get_normalized_path(fpath)
 
 
@@ -23,12 +24,12 @@ def move_(msg: Message):
     if exists(src_name):
         if isdir(dest_name):
             shutil.move(src_name, dest_name)
-            # todo send success
+            # todo send success -> 2.04
         else:
             # TODO log, not moved
             pass
     else:
-        # TODO log,the source file name is wrong
+        # TODO log, the source file name is wrong
         pass
 
 
@@ -40,7 +41,7 @@ def delete_(msg: Message):
             shutil.rmtree(src_name)
         else:
             remove(src_name)
-        # todo send success
+        # todo send success -> 2.02
     else:
         pass
         # TODO send response -> INVALID PATH
@@ -58,41 +59,40 @@ def rename_(msg: Message):
             if new_path == '':
                 # am primit doar numele fisierului
                 os.rename(src_name, join(src_path, new_f_name))
+                # todo send response -> 2.04
             elif new_path == src_path:
                 # difera doar numele fisierului
                 os.rename(src_name, new_name)
+                # todo send response -> 2.04
             else:
                 # este invalid
-                # TODO SEND RESPONSE -> invalid new_path
+                # TODO SEND RESPONSE -> invalid new_path -> 4.00?
                 pass
         else:
-            # TODO SEND REPSONSE -> INVALID NEW_F_NAME
+            # TODO SEND REPSONSE -> INVALID NEW_F_NAME -> 4.00?
             pass
     else:
         pass
-        # TODO SEND RESPONSE -> INVALID SOURCE PATH
+        # TODO SEND RESPONSE -> INVALID SOURCE PATH -> 4.00?
 
 
 def create_(msg: Message):
     fpath: str = path_from_options(msg)
     if not exists(fpath):
-        path, f_name = split(fpath)
-        if msg.op_code <= 3:
-            os.makedirs(path)
-            with open(fpath, 'w'):
-                pass
-        else:
-            os.makedirs(fpath)
+        os.makedirs(fpath)
+        # todo send response -> 2.01
     else:
         # the path exists
-        # TODO SEND RESPONSE -> INVALID PATH, ALREADY EXISTS
+        # TODO SEND RESPONSE -> INVALID PATH, ALREADY EXISTS -> 4.00?
         pass
 
 
+# todo check when received last packet(0 as ord_no)
 def upload_(msg: Message):
     if msg.token not in gu.upload_collection:
-        gu.upload_collection[msg.token] = gu.Content(path_from_options(msg), msg.options[gu.OptionNumbers.Size1.value])
+        gu.upload_collection[msg.token] = gu.Content(path_from_options(msg), int(msg.options[gu.Size1]))
     gu.upload_collection[msg.token].add_packet(msg.ord_no, msg.oper_param)
+    # todo send response 2.01
 
 
 def download_(msg: Message):
@@ -100,9 +100,9 @@ def download_(msg: Message):
 
     if isfile(file):
         msg_to_send: Message = msg.copy_for_download()
-        msg_to_send.options[gu.OptionNumbers.Size1.value] = str(os.stat(file).st_size)
+        msg_to_send.options[gu.Size1] = str(os.stat(file).st_size)
         ord_no = 1
-
+        # todo set msg to 2.05
         max_value = 2 ** 16 - 1
 
         with open(file, 'r') as f:
@@ -125,21 +125,18 @@ def download_(msg: Message):
 
             msg.send_response()
     else:
-        # TODO send not a file RESPONSE
+        # TODO send 'not a file' RESPONSE
         pass
 
+
 def request_processor(msg: Message):
-    if msg.op_code in [1, 5]:  # check MOVE function
+    if msg.op_code == 0:
+        upload_(msg)
+    elif msg.op_code == 1:
+        download_(msg)
+    elif msg.op_code in [2, 6]:  # check MOVE function
         move_(msg)
-    elif msg.op_code in [2, 6]:  # check if delete function
+    elif msg.op_code in [3, 7]:  # check if delete function
         delete_(msg)
-    elif msg.op_code in [3, 7]:  # check if rename function
+    elif msg.op_code in [4, 8]:  # check if rename function
         rename_(msg)
-    elif msg.op_code == 4:  # check if create function
-        create_(msg)
-    elif msg.op_code == 0:
-        # TODO de reverificat daca e garantat acest lucru
-        if msg.code_details == gu.MethodCodes.PUT.value:
-            upload_(msg)
-        else:
-            download_(msg)

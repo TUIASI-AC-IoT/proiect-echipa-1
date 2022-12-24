@@ -7,7 +7,8 @@ import general_use as gu
 from message import Message
 
 
-# py main.py --r_port=65415 --s_port=65416 --s_ip=192.168.0.103
+# python main.py --r_port=65415 --s_port=65416 --s_ip=192.168.0.103
+# python main.py --r_port=65414 --s_port=65413 --s_ip=192.168.0.103
 
 def receive_request():
     data_rcv, address = soc.recvfrom(gu.max_up_size)

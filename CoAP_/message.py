@@ -65,7 +65,8 @@ class Message:
         # 8 - location-Path -> ascii encode
         # 12 - content-format -> ascii encode
         # 60 - Size1 -> ascii encoded
-        # obs2. aceste trei optiuni nu au caracteristica de a fi repetabile => prezenta a mai mult de trei optiuni indica o problema
+        # obs2. aceste trei optiuni nu au caracteristica de a fi repetabile => prezenta a
+        # mai mult de trei optiuni indica o problema
 
         # is_valid = False daca:
         # delta, lungimea sau valoarea (duplicata) sunt malformate sau incorect ca format pentru o optiune
@@ -149,11 +150,10 @@ class Message:
                                     ext_delta_bytes + option_length + 3) * 8]).tobytes().decode("utf-8")
                             ext_option_bytes = 2
                         else:
-                            self.invalid_reasons.append(
-                                "__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(
-                                    option_length))
-                            gu.log.error("__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(
-                                option_length) + " (msg_id:" + str(self.msg_id) + ", token:" + str(self.token) + ")")
+                            err = "__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(
+                                    option_length)
+                            self.invalid_reasons.append(err)
+                            gu.log.error(err + " (msg_id:" + str(self.msg_id) + ", token:" + str(self.token) + ")")
                             self.invalid_code = 2
                             raise Exception
 
@@ -231,7 +231,7 @@ class Message:
         # message id
         result = self.__method(result, self.msg_id, 2, True)
 
-        if self.code_class==0 and self.code_details==0:
+        if self.code_class == 0 and self.code_details == 0:
             return result.tobytes()
 
         # token value
@@ -263,11 +263,10 @@ class Message:
                         result = self.__method(result, 14, 1, False)
                         result = self.__method(result, len(self.options[opt_no].encode('utf-8')) + 269, 2, True)
                     else:
-                        self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
-                            len(self.options[opt_no].encode('utf-8'))))
-                        gu.log.error("__assemble_resp: lungimea optiunii invalida: " + str(
-                            len(self.options[opt_no].encode('utf-8'))) + " (msg_id:" + str(
-                            self.msg_id) + ", token:" + str(self.token) + ")")
+                        err = "__assemble_resp: lungimea optiunii invalida: " + str(
+                            len(self.options[opt_no].encode('utf-8')))
+                        self.invalid_reasons.append(err)
+                        gu.log.error(err + " (msg_id:" + str(self.msg_id) + ", token:" + str(self.token) + ")")
                         raise Exception
 
                 elif option_delta < 243:
@@ -287,11 +286,10 @@ class Message:
                         result = self.__method(result, option_delta + 13, 1, True)
                         result = self.__method(result, len(self.options[opt_no].encode('utf-8')) + 269, 2, True)
                     else:
-                        self.invalid_reasons.append("__assemble_resp: lungimea optiunii invalida: " + str(
-                            len(self.options[opt_no].encode('utf-8'))))
-                        gu.log.error("__assemble_resp: lungimea optiunii invalida: " + str(
-                            len(self.options[opt_no].encode('utf-8'))) + " (msg_id:" + str(
-                            self.msg_id) + ", token:" + str(self.token) + ")")
+                        err = "__assemble_resp: lungimea optiunii invalida: " + str(
+                            len(self.options[opt_no].encode('utf-8')))
+                        self.invalid_reasons.append(err)
+                        gu.log.error(err + " (msg_id:" + str(self.msg_id) + ", token:" + str(self.token) + ")")
                         raise Exception
 
                 elif option_delta < 65266:
