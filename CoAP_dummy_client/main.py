@@ -3,15 +3,15 @@ import sys
 import threading
 from enum import Enum, auto
 from threading import Lock
-from typing import TypeAlias
 import select
 from bitarray import *
 from numpy import floor
 
-# py main.py --r_port=65416 --s_port=65415 --s_ip=192.168.0.103
+# python main.py --r_port=65416 --s_port=65415 --s_ip=192.168.0.103
+# python main.py --r_port=65413 --s_port=65414 --s_ip=192.168.0.103
 
 # variabile diverse
-Token: TypeAlias = int
+Token = int
 max_up_size = 65507  # max udp payload size
 running = False
 lock_q1 = Lock()

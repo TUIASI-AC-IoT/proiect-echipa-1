@@ -27,14 +27,14 @@ def check_msg_id(msg: Message):
 
 def check_token(msg: Message):
     if msg.tkn_length == 0:
-        return msg.token is None
+        return not bool(msg.token)
     else:
         return msg.token is not None
 
 
 def check_options(msg: Message):
     for opt in msg.options:
-        if opt not in [o.value for o in gu.OptionNumbers] or msg.options[opt] is None:
+        if opt not in gu.OptionNumbers or msg.options[opt] is None:
             return False
     return True
 
@@ -47,22 +47,22 @@ def check_op_code(msg: Message):
 def check_ordno_operp(msg: Message):
     if msg.msg_type == gu.MsgType.Request:
         if msg.op_code == 0:
-            return (msg.ord_no == 0 and msg.oper_param is None) or \
+            return (msg.ord_no == 0 and (not bool(msg.oper_param))) or \
                    (msg.ord_no > 0 and bool(msg.oper_param))
         else:
             val = (msg.ord_no == 0)
             if val:
                 if msg.op_code in range(1, 8, 2):  # start, end, step
-                    val = val and msg.oper_param is None
+                    val = val and (not bool(msg.oper_param))
                 else:
                     val = val and bool(msg.oper_param)
             return val
     else:
         if msg.op_code == 1:
-            return (msg.ord_no == 0 and msg.oper_param is None) or \
+            return (msg.ord_no == 0 and (not bool(msg.oper_param))) or \
                    (msg.ord_no > 0 and bool(msg.oper_param))
         else:
-            return msg.ord_no == 0 and msg.oper_param is None
+            return msg.ord_no == 0 and (not bool(msg.oper_param))
 
 
 def check_method(msg: Message):
@@ -108,7 +108,7 @@ def check_mandatory_options(msg: Message):
         if msg.op_code == 1:
             return verify_options_and_length(msg.options, [12, 60])
         else:
-            return msg.options is None
+            return not bool(msg.options)
 
 
 def check_mandatory_type(msg: Message):
@@ -146,7 +146,7 @@ def sintatic_analizer(msg: Message) -> bool:
                 # if the CoAP format is invalid
                 if not get_valid(msg, check_functions[0]):
                     # todo send RST
-                    pass
+                    valid = False
                 else:
                     # check the payload format
                     if get_valid(msg, check_functions[1]):
@@ -155,9 +155,11 @@ def sintatic_analizer(msg: Message) -> bool:
                             pass
                         else:
                             # todo send RST/BAD request ->?
+                            valid = False
                             pass
                     else:
                         # todo send response -> PACHETELE PRORIETARE SUNT VINOVATE
+                        valid = False
                         pass
         else:
             valid = False

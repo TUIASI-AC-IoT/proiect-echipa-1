@@ -92,7 +92,7 @@ class Message:
         else:
             # for token
             idx = 32
-            self.token = 0
+            # self.token = 0
 
             if self.tkn_length > 0:
                 idx = (32 + self.tkn_length * 8)
@@ -151,7 +151,7 @@ class Message:
                             ext_option_bytes = 2
                         else:
                             err = "__disassemble_req:option lenght incorect (teoretic 15, practic >=15): " + str(
-                                    option_length)
+                                option_length)
                             self.invalid_reasons.append(err)
                             gu.log.error(err + " (msg_id:" + str(self.msg_id) + ", token:" + str(self.token) + ")")
                             self.invalid_code = 2
