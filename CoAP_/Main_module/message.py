@@ -57,7 +57,7 @@ class Message:
 
     def send_response(self):
         if self.is_valid:
-            from main import send_response
+            from server_main import send_response
             send_response(self)
 
     def __disassemble_req(self):
@@ -434,7 +434,7 @@ def lists_to_str():
 
 def gen_token(tkn_length_in_bits):
     if gu.first_run_token:
-        with open("token.txt", "r") as f:
+        with open("Files_module/token.txt", "r") as f:
             result_list = f.read().splitlines()
             gu.token_file = f
             gu.token_file.close()
@@ -451,9 +451,9 @@ def gen_token(tkn_length_in_bits):
     else:
         result = 0
 
-    gu.token_file = open("token.txt", 'w')
+    gu.token_file = open("Files_module/token.txt", 'w')
     gu.token_file.close()
-    gu.token_file = open("token.txt", 'a')
+    gu.token_file = open("Files_module/token.txt", 'a')
     if _idx == -1:
         gu.last_tokens.append([tkn_length_in_bits, result])
     else:
@@ -467,7 +467,7 @@ def gen_token(tkn_length_in_bits):
 
 def gen_msg_id():
     if gu.first_run_msg_id:
-        gu.msg_id_file = open("msg_id.txt", "r", encoding='utf-16')
+        gu.msg_id_file = open("Files_module/msg_id.txt", "r", encoding='utf-16')
         gu.last_msg_id = int(gu.msg_id_file.read())
         gu.first_run_msg_id = False
         gu.msg_id_file.close()
@@ -477,9 +477,9 @@ def gen_msg_id():
     else:
         gu.last_msg_id = 0
 
-    gu.msg_id_file = open("msg_id.txt", 'w', encoding='utf-16')
+    gu.msg_id_file = open("Files_module/msg_id.txt", 'w', encoding='utf-16')
     gu.msg_id_file.close()
-    gu.msg_id_file = open("msg_id.txt", 'a', encoding='utf-16')
+    gu.msg_id_file = open("Files_module/msg_id.txt", 'a', encoding='utf-16')
     gu.msg_id_file.write(str(gu.last_msg_id))
     gu.msg_id_file.close()
 

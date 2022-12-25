@@ -7,8 +7,8 @@ import select
 from bitarray import *
 from numpy import floor
 
-# python main.py --r_port=65416 --s_port=65415 --s_ip=192.168.0.103
-# python main.py --r_port=65413 --s_port=65414 --s_ip=192.168.0.103
+# python dummy_client_main.py --r_port=65416 --s_port=65415 --s_ip=127.0.0.1
+# python dummy_client_main.py --r_port=65413 --s_port=65414 --s_ip=127.0.0.1
 
 # variabile diverse
 Token = int

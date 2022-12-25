@@ -191,3 +191,287 @@ ord_no: 0
 oper_param: text in payload de test
 FROM:('192.168.0.103', 65416)
 2022-12-24 16:26:21,187 :: INFO     :: Invalid message. Uncheck or unknown reason, check log file. (msg_id:10, token:5)
+2022-12-25 10:31:39,431 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 10:31:39,432 :: INFO     :: 
+RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)
+2022-12-25 12:37:33,440 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 12:37:33,441 :: INFO     :: 
+RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)
+2022-12-25 13:50:08,814 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 14268)>. Thread started!
+2022-12-25 13:50:08,814 :: ERROR    :: main_th_fct(): name 'soc' is not defined. Execution aborted!
+2022-12-25 13:50:08,814 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 9360)>. Thread started!
+2022-12-25 13:50:08,815 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 21532)>. Thread started!
+2022-12-25 13:50:48,873 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 9360)>. Thread stoped!
+2022-12-25 13:50:48,873 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 21532)>. Thread stoped!
+2022-12-25 13:53:57,404 :: ERROR    :: if __name__ == '__main__': Eroare la creearea socketului UDP. Detalii:name 'soc' is not defined. Execution aborted!
+2022-12-25 13:54:41,815 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 10992)>. Thread started!
+2022-12-25 13:54:41,816 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 14924)>. Thread started!
+2022-12-25 13:54:41,816 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 944)>. Thread started!
+2022-12-25 13:55:16,314 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 13:55:16,314 :: INFO     :: 
+RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)
+2022-12-25 13:56:31,810 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 10992)>. Thread stoped!
+2022-12-25 13:56:31,996 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 944)>. Thread stoped!
+2022-12-25 13:56:36,411 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 14924)>. Thread stoped!
+2022-12-25 13:57:15,421 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 14272)>. Thread started!
+2022-12-25 13:57:15,422 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 16684)>. Thread started!
+2022-12-25 13:57:15,422 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 10908)>. Thread started!
+2022-12-25 13:57:20,424 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 10908)>. Thread stoped!
+2022-12-25 13:57:20,424 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 16684)>. Thread stoped!
+2022-12-25 13:57:20,455 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 14272)>. Thread stoped!
+2022-12-25 14:11:23,539 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 4500)>. Thread started!
+2022-12-25 14:11:23,539 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 9776)>. Thread started!
+2022-12-25 14:11:23,540 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 16676)>. Thread started!
+2022-12-25 14:14:40,941 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 4500)>. Thread stoped!
+2022-12-25 14:14:43,414 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 18352)>. Thread started!
+2022-12-25 14:14:43,415 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 12388)>. Thread started!
+2022-12-25 14:14:43,415 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 10500)>. Thread started!
+2022-12-25 14:15:09,685 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 22244)>. Thread started!
+2022-12-25 14:15:09,686 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 10012)>. Thread started!
+2022-12-25 14:15:09,686 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 21236)>. Thread started!
+2022-12-25 14:16:10,318 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 288)>. Thread started!
+2022-12-25 14:16:10,319 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 20256)>. Thread started!
+2022-12-25 14:16:10,319 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 17264)>. Thread started!
+2022-12-25 14:21:28,477 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 288)>. Thread stoped!
+2022-12-25 14:23:00,297 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 10000)>. Thread started!
+2022-12-25 14:23:00,297 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 20440)>. Thread started!
+2022-12-25 14:23:00,298 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 9248)>. Thread started!
+2022-12-25 14:23:00,298 :: INFO     :: ==============================================================================================
+2022-12-25 14:25:29,225 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 9056)>. Thread started!
+2022-12-25 14:25:29,226 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 2064)>. Thread started!
+2022-12-25 14:25:29,226 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 6828)>. Thread started!
+2022-12-25 14:25:29,226 :: INFO     :: ==============================================================================================
+2022-12-25 14:25:34,233 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 2064)>. Thread stoped!
+2022-12-25 14:25:34,233 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 6828)>. Thread stoped!
+2022-12-25 14:25:34,266 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 9056)>. Thread stoped!
+2022-12-25 14:25:34,266 :: INFO     :: Threads joined with success!
+2022-12-25 14:26:46,055 :: INFO     :: ==============================================================================================
+2022-12-25 14:26:46,055 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 12760)>. Thread started!
+2022-12-25 14:26:46,056 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 10812)>. Thread started!
+2022-12-25 14:26:46,057 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 9548)>. Thread started!
+2022-12-25 14:26:51,061 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 9548)>. Thread stoped!
+2022-12-25 14:26:51,061 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 10812)>. Thread stoped!
+2022-12-25 14:26:51,076 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 12760)>. Thread stoped!
+2022-12-25 14:26:51,076 :: INFO     :: Threads joined with success!
+2022-12-25 14:27:18,358 :: INFO     :: ==============================================================================================
+2022-12-25 14:27:18,359 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 11240)>. Thread started!
+2022-12-25 14:27:18,360 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 4740)>. Thread started!
+2022-12-25 14:27:18,360 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 18548)>. Thread started!
+2022-12-25 14:27:51,430 :: INFO     :: ==============================================================================================
+2022-12-25 14:27:51,430 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 17900)>. Thread started!
+2022-12-25 14:27:51,431 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 18848)>. Thread started!
+2022-12-25 14:27:51,431 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 21224)>. Thread started!
+2022-12-25 14:28:42,484 :: INFO     :: ==============================================================================================
+2022-12-25 14:28:42,485 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 16856)>. Thread started!
+2022-12-25 14:28:42,485 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 9880)>. Thread started!
+2022-12-25 14:28:42,486 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 17520)>. Thread started!
+2022-12-25 14:31:37,727 :: INFO     :: ==============================================================================================
+2022-12-25 14:31:37,728 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 7692)>. Thread started!
+2022-12-25 14:31:37,728 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 17668)>. Thread started!
+2022-12-25 14:31:37,729 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 17700)>. Thread started!
+2022-12-25 14:32:14,028 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 7692)>. Thread stoped!
+2022-12-25 15:03:40,686 :: INFO     :: ==============================================================================================
+2022-12-25 15:03:40,687 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 19704)>. Thread started!
+2022-12-25 15:03:40,687 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 16428)>. Thread started!
+2022-12-25 15:03:40,687 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 8168)>. Thread started!
+2022-12-25 15:04:19,620 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:04:19,620 :: INFO     :: 
+RECEIVED DATA (logdata off) FROM:('127.0.0.1', 65416)
+2022-12-25 15:04:19,621 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:04:19,621 :: INFO     :: 
+RECEIVED DATA (logdata off) FROM:('127.0.0.1', 65416)
+2022-12-25 15:04:19,621 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:04:19,621 :: INFO     :: 
+RECEIVED DATA (logdata off) FROM:('127.0.0.1', 65416)
+2022-12-25 15:04:19,774 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:04:19,774 :: INFO     :: 
+RECEIVED DATA (logdata off) FROM:('127.0.0.1', 65416)
+2022-12-25 15:04:19,911 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:04:19,911 :: INFO     :: 
+RECEIVED DATA (logdata off) FROM:('127.0.0.1', 65416)
+2022-12-25 15:06:51,924 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 19704)>. Thread stoped!
+2022-12-25 15:06:57,467 :: INFO     :: ==============================================================================================
+2022-12-25 15:06:57,468 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 1680)>. Thread started!
+2022-12-25 15:06:57,469 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 7184)>. Thread started!
+2022-12-25 15:06:57,469 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 5260)>. Thread started!
+2022-12-25 15:07:17,566 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:07:17,566 :: INFO     :: 
+RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)
+2022-12-25 15:07:34,453 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:07:34,453 :: INFO     :: 
+RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)
+2022-12-25 15:08:27,622 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 5260)>. Thread stoped!
+2022-12-25 15:08:27,810 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 1680)>. Thread stoped!
+2022-12-25 15:08:35,132 :: INFO     :: ==============================================================================================
+2022-12-25 15:08:35,133 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 3032)>. Thread started!
+2022-12-25 15:08:35,133 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 8540)>. Thread started!
+2022-12-25 15:08:35,134 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 3524)>. Thread started!
+2022-12-25 15:08:43,502 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:08:43,503 :: INFO     :: 
+RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)
+2022-12-25 15:08:43,685 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:08:43,685 :: INFO     :: 
+RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)
+2022-12-25 15:08:43,872 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:08:43,872 :: INFO     :: 
+RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)
+2022-12-25 15:08:49,909 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 3032)>. Thread stoped!
+2022-12-25 15:08:50,148 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 3524)>. Thread stoped!
+2022-12-25 15:08:53,889 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 8540)>. Thread stoped!
+2022-12-25 15:08:53,889 :: INFO     :: Threads joined with success!
+2022-12-25 15:09:28,853 :: INFO     :: ==============================================================================================
+2022-12-25 15:09:28,853 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 14968)>. Thread started!
+2022-12-25 15:09:28,854 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 11548)>. Thread started!
+2022-12-25 15:09:28,855 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 8744)>. Thread started!
+2022-12-25 15:09:42,013 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:09:42,013 :: INFO     :: RECEIVED DATA (logdata off) FROM:('127.0.0.1', 65416)
+2022-12-25 15:09:42,013 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:09:42,013 :: INFO     :: RECEIVED DATA (logdata off) FROM:('127.0.0.1', 65416)
+2022-12-25 15:09:42,148 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:09:42,148 :: INFO     :: RECEIVED DATA (logdata off) FROM:('127.0.0.1', 65416)
+2022-12-25 15:10:43,630 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 14968)>. Thread stoped!
+2022-12-25 15:10:43,962 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 8744)>. Thread stoped!
+2022-12-25 15:10:47,279 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 11548)>. Thread stoped!
+2022-12-25 15:10:47,279 :: INFO     :: Threads joined with success!
+2022-12-25 15:15:26,455 :: INFO     :: ==============================================================================================
+2022-12-25 15:15:26,455 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 19468)>. Thread started!
+2022-12-25 15:15:26,456 :: INFO     :: service_th1_fct(): <Thread(Service Thread1, started 10252)>. Thread started!
+2022-12-25 15:15:26,456 :: INFO     :: service_th2_fct(): <Thread(Service Thread2, started 20436)>. Thread started!
+2022-12-25 15:16:06,050 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:16:06,051 :: INFO     :: RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)
+2022-12-25 15:16:07,461 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:16:07,461 :: INFO     :: RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)
+2022-12-25 15:16:09,020 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
+2022-12-25 15:16:09,020 :: INFO     :: RECEIVED:
+ version: 1
+type: 0
+tkn_length: 5
+code_class: 0
+code_details: 3
+msg_id: 200
+token: 20
+options: {8: "If you're visiting this page, you're likely here because you're searching for a random sentence. Sometimes a random word just isn't enough, and that is where the random sentence generator comes into play. By inputting the desired number, you can make a list of as many random sentences as you want or need. Producing random sentences can be helpful in a number of different ways.", 12: 'cacaca', 60: 'acadele de text'}
+op_code: 0
+ord_no: 0
+oper_param: text in payload de test
+FROM:('127.0.0.1', 65416)

@@ -9,5 +9,5 @@ def deduplicator(msg: Message) -> bool:
         gu.req_q2.append(msg)
         return True
     else:
-        pass  # todo eventual log
+        pass
     return False

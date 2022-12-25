@@ -1,7 +1,8 @@
 import json
-import general_use as gu
-from message import Message
-from sintatic_analizer import sintatic_analizer
+
+from Main_module import general_use as gu
+from Main_module.message import Message
+from Main_module.sintatic_analizer import sintatic_analizer
 
 
 def create_req_message(msg: dict) -> Message:

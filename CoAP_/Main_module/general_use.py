@@ -1,24 +1,37 @@
 import logging
 import logging as log
+import os
+import socket
 from enum import Enum, auto
 from threading import Lock
 
 from content import Content
 from message import Message
 
-# variabile diverse
+r_port = None  # rcv port
+s_port = None  # snd port
+s_ip = None  # snd ip
+
 Token = int
 ROOT = r''  # path of the server root files
 max_up_size = 65507  # max udp payload size
+logdata_flag = True  # flag ul determina daca in fisierul log se scrie continutul mesajului primit
+printdata_flag = True  # flag ul determina daca in consola se scrie continutul mesajului primit
+wait_time_value = 5  # valoarea maxima de asteptarea pentru evenimentele de awake ale ths1 si ths2
+
 first_run_msg_id = True
-msg_id_file = None
-last_msg_id = int
-token_file = None
+msg_id_file = None  # fisierul de unde este citit ultimul msg_id folosit
+last_msg_id = int  # ultimul id de msaj folosit
+token_file = None  # fisierul de unde sunt citite ultimele token-urile folosite
 first_run_token = True
-last_tokens = []
-running = False
-log.basicConfig(filename="log.txt", filemode="a", level=logging.INFO,
-                format='%(asctime)s :: %(levelname)-8s :: %(message)s')
+last_tokens = []  # ultimele token-uri folosite
+
+absolute_path = os.path.dirname(__file__)
+relative_path = "Files_module/log.txt"
+full_path = os.path.join(absolute_path, relative_path)
+log.basicConfig(filename=full_path, filemode="a", level=logging.INFO,
+                format='%(asctime)s :: %(levelname)-8s :: %(message)s')  # configuratiile pentru modulul de log
+socket_ = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 
 upload_collection: dict[Token, Content] = dict()
 

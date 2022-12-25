@@ -2,8 +2,9 @@ import os
 import shutil
 from os import remove
 from os.path import *
-from message import Message, gen_msg_id
+
 import general_use as gu
+from message import Message, gen_msg_id
 
 
 def get_normalized_path(path: str):
