@@ -9,17 +9,17 @@ import general_use as gu
 # clasa generica pentru mesajele coap specifice
 class Message:
     def __init__(self, msg_type):
-        self.oper_param: str
-        self.ord_no: int
-        self.op_code: int
+        self.oper_param: str = str()
+        self.ord_no: int = int()
+        self.op_code: int = int()
         self.options: dict[int, str] = dict()
-        self.token: int = None
-        self.msg_id: int = None
-        self.code_details: int
-        self.code_class: int
-        self.tkn_length: int
-        self.type: int
-        self.version: int
+        self.token: int = int()
+        self.msg_id: int = int()
+        self.code_details: int = int()
+        self.code_class: int = int()
+        self.tkn_length: int = int()
+        self.type: int = int()
+        self.version: int = int()
         self.raw_request = bitarray()
         self.msg_type = msg_type
         self.is_valid = False
@@ -359,17 +359,33 @@ class Message:
             pack += value[-4:]
         return pack
 
-    def copy_for_download(self):
-        msg = Message(gu.MsgType.Response)
-        msg.version = self.version
-        msg.type = self.type
-        msg.tkn_length = self.tkn_length
-        msg.code_class = self.code_class
-        msg.code_details = self.code_details
-        msg.token = self.token
-        msg.options = deepcopy(msg.options)
-        msg.op_code = self.op_code
-        return msg
+    def get_response_message(self, code_class: int, code_details: int, m_type=None):
+        msg_r = Message(gu.MsgType.Response)
+        msg_r.version = 1
+
+        if m_type:
+            msg_r.type = gu.Type.ACK.value
+        else:
+            msg_r.type = gu.Type.NON.value
+
+        msg_r.tkn_length = self.tkn_length
+        msg_r.code_class = code_class
+        msg_r.code_details = code_details
+        msg_r.msg_id = self.msg_id
+        msg_r.token = self.token
+        msg_r.op_code = self.op_code
+
+        return msg_r
+
+    def get_rst_message(self, m_type: int):
+        msg_r = Message(gu.MsgType.Response)
+        msg_r.version = 1
+        msg_r.type = m_type
+        msg_r.code_class = 0
+        msg_r.code_details = 0
+        msg_r.msg_id = self.msg_id
+        msg_r.tkn_length = 0
+        return msg_r
 
     def __repr__(self):
         if self.is_valid:

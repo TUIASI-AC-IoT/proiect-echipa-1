@@ -6,7 +6,7 @@ def check_type(msg: Message):
     if msg.msg_type == gu.MsgType.Request:
         return msg.type in [gu.Type.CON.value, gu.Type.NON.value]
     else:
-        return msg.msg_type == gu.Type.NON.value
+        return msg.type in [gu.Type.ACK.value, gu.Type.NON.value]
 
 
 def check_tkl(msg: Message):
@@ -81,6 +81,8 @@ def check_method(msg: Message):
         value: bool = msg.code_class == 2
         # daca e de raspuns de succes, atunci trebuie sa respecte un anumit code_details
         if value:
+            if msg.code_details == 3:
+                return True
             if msg.op_code in [0, 5]:
                 return msg.code_details == 1
             elif msg.op_code in [2, 4, 6, 8]:
@@ -134,7 +136,11 @@ def sintatic_analizer(msg: Message) -> bool:
             # check if message is empty message
             if msg.code_class == 0 and msg.code_details == 0:
                 value = all(map(bool, [msg.token, msg.options, msg.op_code, msg.ord_no, msg.oper_param]))
-                return value and msg.tkn_length == 0 and msg.type in [0, 2, 3]  # 0-con, 2-ack, 3-rst
+                if value and msg.tkn_length == 0 and msg.type in [0, 2, 3]:  # 0-con, 2-ack, 3-rst
+                    gu.send_rst_response(msg, gu.Type.ACK.value)
+                else:
+                    pass
+                return False
             else:
 
                 def get_valid(message, fun_list):
@@ -145,29 +151,24 @@ def sintatic_analizer(msg: Message) -> bool:
 
                 # if the CoAP format is invalid
                 if not get_valid(msg, check_functions[0]):
-                    # todo send RST
+                    gu.send_rst_response(msg, gu.Type.ACK.value)
                     valid = False
                 else:
                     # check the payload format
                     if get_valid(msg, check_functions[1]):
                         if get_valid(msg, check_functions[2]):  # check mandatory things
-                            # todo send ACK
-                            pass
+                            gu.send_response(msg, 2, 3, gu.Type.ACK.value)
                         else:
-                            # todo send RST/BAD request ->?
+                            gu.send_rst_response(msg, gu.Type.ACK.value)
                             valid = False
-                            pass
                     else:
-                        # todo send response -> PACHETELE PRORIETARE SUNT VINOVATE
+                        gu.send_response(msg, 4, 0)
                         valid = False
-                        pass
         else:
             valid = False
     else:
         if msg.invalid_code == 0:
-            pass
-            # todo send BAD request -> payload gresit
+            gu.send_response(msg, 4, 0)
         elif msg.invalid_code == 2:
-            pass
-            # todo send response (the options are duplicated) 4.03
+            gu.send_response(msg, 4, 2)
     return valid

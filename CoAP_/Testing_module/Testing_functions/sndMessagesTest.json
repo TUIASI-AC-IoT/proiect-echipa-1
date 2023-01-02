@@ -1,0 +1,35 @@
+{
+  "rspMsgCreated_get_correct": {
+    "version": 1,
+    "type": 1,
+    "tkn_length": 1,
+    "code_class": 2,
+    "code_details": 1,
+    "msg_id": 10,
+    "token": 5,
+    "options": {},
+    "op_code": 5,
+    "ord_no": 0,
+    "oper_param": null
+  },
+  "rspMsgCreated_invalid_type": {
+    "type": 2
+  },
+  "rspMsgCreated_invalid_code_class": {
+    "code_class": 0
+  },
+  "rspMsgCreated_invalid_code_details": {
+    "code_details": 3
+  },
+  "rspMsgCreated_invalid_options": {
+    "options": {"8": "this is an option"}
+  },
+  "empty_msg": {
+    "version": 1,
+    "type": 0,
+    "tkn_length": 0,
+    "code_class": 0,
+    "code_details": 0,
+    "msg_id": 10
+  }
+}

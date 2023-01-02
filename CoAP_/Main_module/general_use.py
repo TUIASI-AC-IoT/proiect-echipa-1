@@ -43,7 +43,7 @@ MethodCodes = [GET, POST, PUT, DELETE, JOMAG4]
 # 4.00 = Bad Request, 4.02 = Bad Option, 4.04 = Not Found
 # 5.00 = Internal Server Error
 MESSAGE_CODES = {
-    2: [1, 2, 4, 5],
+    2: [1, 2, 3, 4, 5],
     4: [0, 2, 4],
     5: [0]
 }
@@ -72,11 +72,6 @@ class MsgList:
         with self.__lock:
             return self.__list.pop(index)
 
-    # @property
-    # def len(self):
-    #     with self.__lock:
-    #         return len(self.__list)
-
     def get_msg_id_list(self):
         with self.__lock:
             return [m.msg_id for m in self.__list]
@@ -96,3 +91,15 @@ class Type(Enum):
     NON = 1
     ACK = 2
     RESET = 3
+
+
+def send_response(msg: Message, code_class: int, code_details: int, m_type=None):
+    if msg.type == Type.CON.value:
+        msg_r = msg.get_response_message(code_class, code_details, m_type)
+        msg_r.send_response()
+
+
+def send_rst_response(msg: Message, m_type=None):
+    if msg.type == Type.CON.value:
+        msg_r = msg.get_rst_message(m_type)
+        msg_r.send_response()
