@@ -18,6 +18,7 @@ max_up_size = 65507  # max udp payload size
 logdata_flag = False  # flag ul determina daca in fisierul log se scrie continutul mesajului primit
 printdata_flag = True  # flag ul determina daca in consola se scrie continutul mesajului primit
 wait_time_value = 5  # valoarea maxima de asteptarea pentru evenimentele de awake ale ths1 si ths2
+operparam_flag = False  # flag ul ce determina daca se afiseaza continutul oper param
 
 first_run_msg_id = True
 msg_id_file = None  # fisierul de unde este citit ultimul msg_id folosit

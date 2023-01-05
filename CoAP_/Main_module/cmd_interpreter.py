@@ -18,7 +18,7 @@ def cmd_interpreter(cmd: str):
     elif indexOf(cmd.upper(), "WAIT-TIME") != -1:
         gu.wait_time_value = int(cmd.upper().split("WAIT-TIME")[1])
         print("WAIT-TIME: " + str(gu.wait_time_value))
-    elif cmd.upper() == "EXIT" or cmd.upper() == "QUIT" or cmd.upper() == "CLOSE" or cmd.upper() == "STOP":
+    elif cmd.upper() == "EXIT":
         print("CLOSING")
         th.stop_threads()
         sys.exit()
@@ -31,10 +31,14 @@ def cmd_interpreter(cmd: str):
         print("S-PORT: " + str(gu.s_port))
     elif cmd.upper() == "S-IP":
         print("S-IP: " + str(gu.s_ip))
+    elif cmd.upper() == "OPERPARAM-PRINT" or cmd.upper() == "OPPRM":
+        gu.operparam_flag = not gu.operparam_flag
+        print("OPERPARAM-PRINT: " + str(gu.operparam_flag))
     elif cmd.upper() == "PRINT-DATA":
-        gu.printdata_flag=not gu.printdata_flag
-        print("PRINT-DATA: "+str(gu.printdata_flag))
-    elif cmd.upper() == "CMD-LIST" or cmd.upper() == "HELP":
-        print("CMD-LIST: LOG-DATA, WAIT-TIME, EXIT, R-PORT, S-PORT, S-IP, UDP-PAYLOAD-MSIZE, PRINT-DATA")
+        gu.printdata_flag = not gu.printdata_flag
+        print("PRINT-DATA: " + str(gu.printdata_flag))
+    elif cmd.upper() == "CMD-LIST":
+        print(
+            "CMD-LIST: LOG-DATA,OPERPARAM-PRINT, WAIT-TIME, EXIT, R-PORT, S-PORT, S-IP, UDP-PAYLOAD-MSIZE, PRINT-DATA")
     else:
         print("Unknown command: " + cmd + "\n")

@@ -10,6 +10,9 @@ from message import Message
 # python dummy_client_main.py --r_port=65415 --s_port=65416 --s_ip=127.0.0.1
 # python dummy_client_main.py --r_port=65414 --s_port=65413 --s_ip=127.0.0.1
 
+# filtru pentru wireshark
+# udp and ip.addr==192.168.0.102 and ip.addr==192.168.0.104
+
 
 def receive_request():
     data_rcv, address = gu.socket_.recvfrom(gu.max_up_size)
