@@ -491,13 +491,26 @@ def tester(test_nr: int):
     elif test_nr == 14:
         upload(os.path.join(dir_path, r'Upload testing files\test.png'), 'test.png', 4)
     elif test_nr == 15:
-        upload(os.path.join(dir_path, r'Upload testing files\test.py'), 'file\\test.py', 5)
+        upload(os.path.join(dir_path, r'Upload testing files\test.py'), 'test.py', 5)
     elif test_nr == 16:
         upload(os.path.join(dir_path, r'Upload testing files\test.txt'), 'test.txt', 6)
     elif test_nr == 17:
         upload(os.path.join(dir_path, r'Upload testing files\test.wav'), 'test.wav', 7)
     elif test_nr == 2:
-        pass
+        download = Message(MsgType.Request)
+        download.version = 1
+        download.type = Type.CON.value
+        download.tkn_length = 5
+        download.code_class = 0
+        download.code_details = 1
+        download.msg_id = 0
+        download.token = 23
+        download.options = {8: "test.py"}
+        download.op_code = 1
+        download.ord_no = 0
+        download.oper_param = b''
+        download.is_valid = True
+        test = download
     elif test_nr == 3:
         move_file = Message(MsgType.Request)
         move_file.version = 1
@@ -582,7 +595,7 @@ def tester(test_nr: int):
         delete_dir.code_details = 4
         delete_dir.msg_id = 0
         delete_dir.token = 20
-        delete_dir.options = {8: "file2"}
+        delete_dir.options = {8: "file"}
         delete_dir.op_code = 7
         delete_dir.ord_no = 0
         delete_dir.oper_param = b''

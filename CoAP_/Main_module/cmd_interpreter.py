@@ -18,7 +18,7 @@ def cmd_interpreter(cmd: str):
     elif indexOf(cmd.upper(), "WAIT-TIME") != -1:
         gu.wait_time_value = int(cmd.upper().split("WAIT-TIME")[1])
         print("WAIT-TIME: " + str(gu.wait_time_value))
-    elif cmd.upper() == "EXIT":
+    elif cmd.upper() == "EXIT" or cmd.upper() == "QUIT" or cmd.upper() == "CLOSE" or cmd.upper() == "STOP":
         print("CLOSING")
         th.stop_threads()
         sys.exit()
@@ -37,7 +37,7 @@ def cmd_interpreter(cmd: str):
     elif cmd.upper() == "PRINT-DATA":
         gu.printdata_flag = not gu.printdata_flag
         print("PRINT-DATA: " + str(gu.printdata_flag))
-    elif cmd.upper() == "CMD-LIST":
+    elif cmd.upper() == "CMD-LIST" or cmd.upper() == "HELP":
         print(
             "CMD-LIST: LOG-DATA,OPERPARAM-PRINT, WAIT-TIME, EXIT, R-PORT, S-PORT, S-IP, UDP-PAYLOAD-MSIZE, PRINT-DATA")
     else:
