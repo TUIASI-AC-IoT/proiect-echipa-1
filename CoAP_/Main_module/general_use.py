@@ -15,7 +15,7 @@ s_ip = None  # snd ip
 Token = int
 ROOT = r''  # path of the server root files
 max_up_size = 65507  # max udp payload size
-logdata_flag = True  # flag ul determina daca in fisierul log se scrie continutul mesajului primit
+logdata_flag = False  # flag ul determina daca in fisierul log se scrie continutul mesajului primit
 printdata_flag = True  # flag ul determina daca in consola se scrie continutul mesajului primit
 wait_time_value = 5  # valoarea maxima de asteptarea pentru evenimentele de awake ale ths1 si ths2
 
