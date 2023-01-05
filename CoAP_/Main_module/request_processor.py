@@ -132,7 +132,8 @@ def download_(msg: Message):
     if isfile(file):
         msg_to_send: Message = msg.get_response_message(gu.CONTENT)
         msg_to_send.options[gu.Size1] = str(os.stat(file).st_size)
-        msg_to_send.options[gu.ContentFormat] = msg.options[gu.ContentFormat]
+        ext = os.path.splitext(file)[1][1:]
+        msg_to_send.options[gu.ContentFormat] = ext
         ord_no = 1
         max_value = 2 ** 16 - 1
 
@@ -152,9 +153,9 @@ def download_(msg: Message):
 
             msg_to_send.msg_id = gen_msg_id()
             msg_to_send.ord_no = 0
-            msg_to_send.oper_param = ''
+            msg_to_send.oper_param = b''
 
-            msg.send_response()
+            msg_to_send.send_response()
     else:
         gu.send_response(msg, gu.NOT_FOUND)
         gu.log.error(f"dowload_():  {file} not found (msg_id: {msg.msg_id}, token:{msg.token})")

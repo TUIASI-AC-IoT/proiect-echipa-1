@@ -28,6 +28,7 @@ class Content:
     def add_packet(self, pck_ord_no: int, pck_data: bytes):
         self.content_size += len(pck_data)
         self.__packets[pck_ord_no] = pck_data
+        print(self.content_size, self.theoretical_size)
 
     def is_compl_recv(self):
         return self.content_size == self.theoretical_size
