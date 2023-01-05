@@ -604,3 +604,5 @@ FROM:('127.0.0.1', 65416)
 2023-01-05 07:52:22,059 :: INFO     :: set_raw_data(): __disassemble_req() successful (msg_id:200, token:20)
 2023-01-05 07:52:22,059 :: INFO     :: RECEIVED DATA (logdata off) FROM:('127.0.0.1', 65416)
 2023-01-05 08:00:08,264 :: INFO     :: main_th_fct(): <Thread(Main Thread, started 16516)>. Thread stoped!
+2023-01-02 15:32:26,852 :: ERROR    :: if __name__ == '__main__': Eroare la creearea socketului UDP. Detalii:int() argument must be a string, a bytes-like object or a number, not 'NoneType'. Execution aborted!
+

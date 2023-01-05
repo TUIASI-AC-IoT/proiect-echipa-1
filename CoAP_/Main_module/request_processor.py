@@ -25,13 +25,12 @@ def move_(msg: Message):
     if exists(src_name):
         if isdir(dest_name):
             shutil.move(src_name, dest_name)
-            # todo send success -> 2.04
+            gu.send_response(msg, 2, 4)
         else:
-            # TODO log, not moved
-            pass
+            gu.log.error(f'{dest_name} is not a directory')
     else:
-        # TODO log, the source file name is wrong
-        pass
+        gu.log.error(f'{src_name} non-existent')
+        gu.send_response(msg, 4, 4)
 
 
 def delete_(msg: Message):
@@ -42,10 +41,9 @@ def delete_(msg: Message):
             shutil.rmtree(src_name)
         else:
             remove(src_name)
-        # todo send success -> 2.02
+        gu.send_response(msg, 2, 2)
     else:
-        pass
-        # TODO send response -> INVALID PATH
+        gu.send_response(msg, 4, 4)
 
 
 def rename_(msg: Message):
@@ -60,21 +58,21 @@ def rename_(msg: Message):
             if new_path == '':
                 # am primit doar numele fisierului
                 os.rename(src_name, join(src_path, new_f_name))
-                # todo send response -> 2.04
+                gu.send_response(msg, 2, 4)
             elif new_path == src_path:
                 # difera doar numele fisierului
                 os.rename(src_name, new_name)
-                # todo send response -> 2.04
+                gu.send_response(msg, 2, 4)
             else:
                 # este invalid
                 # TODO SEND RESPONSE -> invalid new_path -> 4.00?
-                pass
+                gu.send_response(msg, 4, 0)
         else:
             # TODO SEND REPSONSE -> INVALID NEW_F_NAME -> 4.00?
-            pass
+            gu.send_response(msg, 4, 0)
     else:
-        pass
         # TODO SEND RESPONSE -> INVALID SOURCE PATH -> 4.00?
+        gu.send_response(msg, 4, 0)
 
 
 def create_(msg: Message):
@@ -82,28 +80,35 @@ def create_(msg: Message):
     if not exists(fpath):
         os.makedirs(fpath)
         # todo send response -> 2.01
+        gu.send_response(msg, 2, 1)
     else:
         # the path exists
         # TODO SEND RESPONSE -> INVALID PATH, ALREADY EXISTS -> 4.00?
-        pass
+        gu.send_response(msg, 4, 0)
 
 
 # todo check when received last packet(0 as ord_no)
 def upload_(msg: Message):
     if msg.token not in gu.upload_collection:
         gu.upload_collection[msg.token] = gu.Content(path_from_options(msg), int(msg.options[gu.Size1]))
-    gu.upload_collection[msg.token].add_packet(msg.ord_no, msg.oper_param)
-    # todo send response 2.01
+    if msg.ord_no != 0:
+        gu.upload_collection[msg.token].add_packet(msg.ord_no, bytes(msg.oper_param))
+    else:
+        if gu.upload_collection[msg.token].is_valid():
+            file = gu.ROOT + gu.upload_collection[msg.token].file_path
+            with open(file, 'wb') as f:
+                gu.upload_collection[msg.token].get_content().tofile(f)
+            gu.send_response(msg, 2, 1)
 
 
 def download_(msg: Message):
     file: str = path_from_options(msg)
 
     if isfile(file):
-        msg_to_send: Message = msg.copy_for_download()
+        msg_to_send: Message = msg.get_response_message(2, 5)
         msg_to_send.options[gu.Size1] = str(os.stat(file).st_size)
+        msg_to_send.options[gu.ContentFormat] = msg.options[gu.ContentFormat]
         ord_no = 1
-        # todo set msg to 2.05
         max_value = 2 ** 16 - 1
 
         with open(file, 'r') as f:
@@ -127,6 +132,7 @@ def download_(msg: Message):
             msg.send_response()
     else:
         # TODO send 'not a file' RESPONSE
+        gu.send_response(msg, 4, 0)
         pass
 
 

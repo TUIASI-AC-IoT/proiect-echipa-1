@@ -1,5 +1,5 @@
 {
-  "msg1_get_correct": {
+  "reqMsgDownload_get_correct": {
     "version": 1,
     "type": 0,
     "tkn_length": 1,
@@ -14,37 +14,37 @@
     "ord_no": 0,
     "oper_param": null
   },
-  "msg1_get_i_version": {
+  "reqMsgDownload_invalid_version": {
     "version": 2
   },
-  "msg1_get_i_type": {
+  "reqMsgDownload_invalid_type": {
     "type": 4
   },
-  "msg1_get_i_tkn_length": {
+  "reqMsgDownload_invalid_tkn_length": {
     "tkn_length": 9
   },
-  "msg1_get_i_code_class": {
+  "reqMsgDownload_invalid_code_class": {
     "code_class": 2
   },
-  "msg1_get_i_code_details": {
+  "reqMsgDownload_invalid_code_details": {
     "code_details": 2
   },
-  "msg1_get_i_msg_id": {
+  "reqMsgDownload_invalid_msg_id": {
     "msg_id": null
   },
-  "msg1_get_i_token": {
+  "reqMsgDownload_invalid_token": {
     "token": null
   },
-  "msg1_get_i_op_code": {
+  "reqMsgDownload_invalid_op_code": {
     "op_code": 2
   },
-  "msg1_get_i_ord_no": {
+  "reqMsgDownload_invalid_ord_no": {
     "ord_no": 3
   },
-  "msg1_get_i_oper_param": {
+  "reqMsgDownload_invalid_oper_param": {
     "oper_param": "this is info"
   },
-  "msg1_get_i_options": {
+  "reqMsgDownload_invalid_options": {
     "options": {
       "8": "file.txt",
       "12": "this_is_option_12_but is not necessary"
