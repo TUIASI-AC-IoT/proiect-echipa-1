@@ -9,7 +9,7 @@ import general_use as gu
 # clasa generica pentru mesajele coap specifice
 class Message:
     def __init__(self, msg_type):
-        self.oper_param: bytes = bytes() # --->NECESAR BYTES<---
+        self.oper_param: bytes = bytes()  # --->NECESAR BYTES<---
         self.ord_no: int = int()
         self.op_code: int = int()
         self.options: dict[int, str] = dict()
@@ -359,18 +359,18 @@ class Message:
             pack += value[-4:]
         return pack
 
-    def get_response_message(self, code_class: int, code_details: int, m_type=None):
+    def get_response_message(self, code: tuple, m_type=None):
         msg_r = Message(gu.MsgType.Response)
         msg_r.version = 1
-
+        msg_r.is_valid = True
         if m_type:
             msg_r.type = gu.Type.ACK.value
         else:
             msg_r.type = gu.Type.NON.value
 
         msg_r.tkn_length = self.tkn_length
-        msg_r.code_class = code_class
-        msg_r.code_details = code_details
+        msg_r.code_class = code[0]
+        msg_r.code_details = code[1]
         msg_r.msg_id = self.msg_id
         msg_r.token = self.token
         msg_r.op_code = self.op_code
@@ -379,6 +379,7 @@ class Message:
 
     def get_rst_message(self, m_type: int):
         msg_r = Message(gu.MsgType.Response)
+        msg_r.is_valid = True
         msg_r.version = 1
         msg_r.type = m_type
         msg_r.code_class = 0
@@ -392,25 +393,25 @@ class Message:
             if self.code_class == 0 and self.code_details == 0:
                 return "version: " + str(
                     self.version) + \
-                    "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
-                    "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
-                    "\nmsg_id: " + str(self.msg_id)
+                       "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
+                       "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
+                       "\nmsg_id: " + str(self.msg_id)
             elif gu.operparam_flag:
                 return "version: " + str(
                     self.version) + \
-                    "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
-                    "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
-                    "\nmsg_id: " + str(self.msg_id) + "\ntoken: " + str(self.token) + \
-                    "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
-                    "\nord_no: " + str(self.ord_no) + "\noper_param: " + str(self.oper_param)
+                       "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
+                       "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
+                       "\nmsg_id: " + str(self.msg_id) + "\ntoken: " + str(self.token) + \
+                       "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
+                       "\nord_no: " + str(self.ord_no) + "\noper_param: " + str(self.oper_param)
             else:
                 return "version: " + str(
                     self.version) + \
-                    "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
-                    "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
-                    "\nmsg_id: " + str(self.msg_id) + "\ntoken: " + str(self.token) + \
-                    "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
-                    "\nord_no: " + str(self.ord_no)+ "\noper_param off "
+                       "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
+                       "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
+                       "\nmsg_id: " + str(self.msg_id) + "\ntoken: " + str(self.token) + \
+                       "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
+                       "\nord_no: " + str(self.ord_no) + "\noper_param off "
         else:
             if len(self.invalid_reasons) != 0:
                 gu.log.info("Invalid message. Check reasons: " + str(self.invalid_reasons) + " (msg_id:" + str(

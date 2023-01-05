@@ -135,14 +135,13 @@ def sintatic_analizer(msg: Message) -> bool:
         if msg.version == 1:
             # check if message is empty message
             if msg.code_class == 0 and msg.code_details == 0:
-                value = all(map(bool, [msg.token, msg.options, msg.op_code, msg.ord_no, msg.oper_param]))
-                if value and msg.tkn_length == 0 and msg.type in [0, 2, 3]:  # 0-con, 2-ack, 3-rst
-                    gu.send_rst_response(msg, gu.Type.ACK.value)
+                value = any(map(bool, [msg.token, msg.options, msg.op_code, msg.ord_no, msg.oper_param]))
+                if not value and msg.tkn_length == 0 and msg.type in [0, 2, 3]:  # 0-con, 2-ack, 3-rst
+                    gu.send_rst_response(msg, gu.Type.RESET.value)
                 else:
                     pass
                 return False
             else:
-
                 def get_valid(message, fun_list):
                     for f in fun_list:
                         if not f(message):
@@ -151,24 +150,31 @@ def sintatic_analizer(msg: Message) -> bool:
 
                 # if the CoAP format is invalid
                 if not get_valid(msg, check_functions[0]):
-                    gu.send_rst_response(msg, gu.Type.ACK.value)
+                    gu.send_rst_response(msg, gu.Type.RESET.value)
                     valid = False
                 else:
                     # check the payload format
                     if get_valid(msg, check_functions[1]):
                         if get_valid(msg, check_functions[2]):  # check mandatory things
-                            gu.send_response(msg, 2, 3, gu.Type.ACK.value)
+                            gu.log.info(f'sintactic_analizer() sucessfull (msg_id: {msg.msg_id}, token:{msg.token})')
+                            gu.send_response(msg, gu.VALID, gu.Type.ACK.value)
                         else:
-                            gu.send_rst_response(msg, gu.Type.ACK.value)
+                            gu.log.error(f'sintactic_analizer(): invalid payload - mandatory things '
+                                         f'(msg_id: {msg.msg_id}, token:{msg.token})')
+                            gu.send_rst_response(msg, gu.Type.RESET.value)
                             valid = False
                     else:
-                        gu.send_response(msg, 4, 0)
+                        gu.log.error(f'sintactic_analizer(): invalid payload'
+                                     f'(msg_id: {msg.msg_id}, token:{msg.token})')
+                        gu.send_response(msg, gu.BAD_REQUEST)
                         valid = False
         else:
             valid = False
+            gu.log.error(f'sintactic_analizer(): invalid message version'
+                         f'(msg_id: {msg.msg_id}, token:{msg.token})')
     else:
         if msg.invalid_code == 0:
-            gu.send_response(msg, 4, 0)
+            gu.send_response(msg, gu.BAD_REQUEST)
         elif msg.invalid_code == 2:
-            gu.send_response(msg, 4, 2)
+            gu.send_response(msg, gu.BAD_OPTION)
     return valid

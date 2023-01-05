@@ -13,9 +13,9 @@ s_port = None  # snd port
 s_ip = None  # snd ip
 
 Token = int
-ROOT = r''  # path of the server root files
+ROOT = r'C:\Users\caule\Desktop\server'  # path of the server root files
 max_up_size = 65507  # max udp payload size
-logdata_flag = False  # flag ul determina daca in fisierul log se scrie continutul mesajului primit
+logdata_flag = True  # flag ul determina daca in fisierul log se scrie continutul mesajului primit
 printdata_flag = True  # flag ul determina daca in consola se scrie continutul mesajului primit
 wait_time_value = 5  # valoarea maxima de asteptarea pentru evenimentele de awake ale ths1 si ths2
 operparam_flag = False  # flag ul ce determina daca se afiseaza continutul oper param
@@ -40,9 +40,20 @@ upload_collection: dict[Token, Content] = dict()
 GET, POST, PUT, DELETE, JOMAG4 = 1, 2, 3, 4, 5
 MethodCodes = [GET, POST, PUT, DELETE, JOMAG4]
 
-# 2.01 = Created, 2.02 = Deleted, 2.04 = Changed, 2.05 = Content
+# 2.01 = Created, 2.02 = Deleted, 2.03 = Valid, 2.04 = Changed, 2.05 = Content
 # 4.00 = Bad Request, 4.02 = Bad Option, 4.04 = Not Found
 # 5.00 = Internal Server Error
+
+CREATED = (2, 1)
+DELETED = (2, 2)
+VALID = (2, 3)
+CHANGED = (2, 4)
+CONTENT = (2, 5)
+BAD_REQUEST = (4, 0)
+BAD_OPTION = (4, 2)
+NOT_FOUND = (4, 4)
+INT_SERV_ERR = (5, 0)
+
 MESSAGE_CODES = {
     2: [1, 2, 3, 4, 5],
     4: [0, 2, 4],
@@ -94,9 +105,9 @@ class Type(Enum):
     RESET = 3
 
 
-def send_response(msg: Message, code_class: int, code_details: int, m_type=None):
+def send_response(msg: Message, code: tuple, m_type=None):
     if msg.type == Type.CON.value:
-        msg_r = msg.get_response_message(code_class, code_details, m_type)
+        msg_r = msg.get_response_message(code, m_type)
         msg_r.send_response()
 
 

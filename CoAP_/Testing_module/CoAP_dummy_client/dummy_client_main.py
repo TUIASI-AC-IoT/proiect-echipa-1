@@ -375,17 +375,17 @@ class Message:
             if self.code_class == 0 and self.code_details == 0:
                 return "version: " + str(
                     self.version) + \
-                    "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
-                    "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
-                    "\nmsg_id: " + str(self.msg_id)
+                       "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
+                       "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
+                       "\nmsg_id: " + str(self.msg_id)
             else:
                 return "version: " + str(
                     self.version) + \
-                    "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
-                    "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
-                    "\nmsg_id: " + str(self.msg_id) + "\ntoken: " + str(self.token) + \
-                    "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
-                    "\nord_no: " + str(self.ord_no) + "\noper_param: " + str(self.oper_param)
+                       "\ntype: " + str(self.type) + "\ntkn_length: " + str(self.tkn_length) + \
+                       "\ncode_class: " + str(self.code_class) + "\ncode_details: " + str(self.code_details) + \
+                       "\nmsg_id: " + str(self.msg_id) + "\ntoken: " + str(self.token) + \
+                       "\noptions: " + str(self.options) + "\nop_code: " + str(self.op_code) + \
+                       "\nord_no: " + str(self.ord_no) + "\noper_param: " + str(self.oper_param)
         else:
             if len(self.invalid_reasons) != 0:
                 return "Invalid message. Check reasons: " + str(self.invalid_reasons)
@@ -470,6 +470,8 @@ def upload(file_path: str, upload_name: str, token):
 
 
 def tester(test_nr: int):
+    dir_path = os.path.split(os.getcwd())[0]
+    print(dir_path)
     if test_nr == 0:
         ping = Message(MsgType.Request)
         ping.version = 1
@@ -481,26 +483,19 @@ def tester(test_nr: int):
         ping.is_valid = True
         test = ping
     elif test_nr == 11:
-        upload(r'C:\Users\admin\Documents\GitHub\proiect-echipa-1\CoAP_\Testing_module\Upload testing files\test.docx',
-               'test.docx', 1)
+        upload(os.path.join(dir_path, r'Upload testing files\test.docx'), 'test.docx', 1)
     elif test_nr == 12:
-        upload(r'C:\Users\admin\Documents\GitHub\proiect-echipa-1\CoAP_\Testing_module\Upload testing files\test.pdf',
-               'test.pdf', 2)
+        upload(os.path.join(dir_path, r'Upload testing files\test.pdf'), 'test.pdf', 2)
     elif test_nr == 13:
-        upload(r'C:\Users\admin\Documents\GitHub\proiect-echipa-1\CoAP_\Testing_module\Upload testing files\test.jpg',
-               'test.jpg', 3)
+        upload(os.path.join(dir_path, r'Upload testing files\test.jpg'), 'test.jpg', 3)
     elif test_nr == 14:
-        upload(r'C:\Users\admin\Documents\GitHub\proiect-echipa-1\CoAP_\Testing_module\Upload testing files\test.png',
-               'test.png', 4)
+        upload(os.path.join(dir_path, r'Upload testing files\test.png'), 'test.png', 4)
     elif test_nr == 15:
-        upload(r'C:\Users\admin\Documents\GitHub\proiect-echipa-1\CoAP_\Testing_module\Upload testing files\test.py',
-               'file\\test.py', 5)
+        upload(os.path.join(dir_path, r'Upload testing files\test.py'), 'file\\test.py', 5)
     elif test_nr == 16:
-        upload(r'C:\Users\admin\Documents\GitHub\proiect-echipa-1\CoAP_\Testing_module\Upload testing files\test.txt',
-               'test.txt', 6)
+        upload(os.path.join(dir_path, r'Upload testing files\test.txt'), 'test.txt', 6)
     elif test_nr == 17:
-        upload(r'C:\Users\admin\Documents\GitHub\proiect-echipa-1\CoAP_\Testing_module\Upload testing files\test.wav',
-               'test.wav', 7)
+        upload(os.path.join(dir_path, r'Upload testing files\test.wav'), 'test.wav', 7)
     elif test_nr == 2:
         pass
     elif test_nr == 3:
@@ -560,7 +555,7 @@ def tester(test_nr: int):
         create_directory.options = {8: "folder_nou/folder"}
         create_directory.op_code = 5
         create_directory.ord_no = 0
-        create_directory.oper_param = ""
+        create_directory.oper_param = b''
         create_directory.is_valid = True
         test = create_directory
     elif test_nr == 7:
@@ -581,7 +576,7 @@ def tester(test_nr: int):
     elif test_nr == 8:
         delete_dir = Message(MsgType.Request)
         delete_dir.version = 1
-        delete_dir.type = Type.NON.value
+        delete_dir.type = Type.CON.value
         delete_dir.tkn_length = 5
         delete_dir.code_class = 0
         delete_dir.code_details = 4
@@ -596,7 +591,7 @@ def tester(test_nr: int):
     elif test_nr == 9:
         rename_dir = Message(MsgType.Request)
         rename_dir.version = 1
-        rename_dir.type = Type.NON.value
+        rename_dir.type = Type.CON.value
         rename_dir.tkn_length = 5
         rename_dir.code_class = 0
         rename_dir.code_details = 5
@@ -628,7 +623,7 @@ def tester(test_nr: int):
     # ping_wrong.is_valid = True
     # test = ping_wrong
 
-    if 0 < test_nr < 10:
+    if 0 <= test_nr < 10:
         data = test.get_raw_data()
         soc.sendto(data, (s_ip, int(s_port)))
 
@@ -654,21 +649,22 @@ soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 
 soc.bind(('0.0.0.0', int(r_port)))
 
-running = True
+if __name__ == '__main__':
+    running = True
 
-try:
-    receive_thread = threading.Thread(target=receive_fct)
-    receive_thread.start()
-except:
-    print("Eroare la pornirea thread‐ului")
-    sys.exit()
-
-while True:
     try:
-        test_nr = input("Test_nr= ")
-        tester(test_nr)
-    except KeyboardInterrupt:
-        running = False
-        print("Waiting for the thread to close...")
-        receive_thread.join()
-        break
+        receive_thread = threading.Thread(target=receive_fct)
+        receive_thread.start()
+    except:
+        print("Eroare la pornirea thread‐ului")
+        sys.exit()
+
+    while True:
+        try:
+            test_nr = input("Test_nr= ")
+            tester(int(test_nr))
+        except KeyboardInterrupt:
+            running = False
+            print("Waiting for the thread to close...")
+            receive_thread.join()
+            break
