@@ -475,3 +475,4 @@ op_code: 0
 ord_no: 0
 oper_param: text in payload de test
 FROM:('127.0.0.1', 65416)
+2023-01-02 15:32:26,852 :: ERROR    :: if __name__ == '__main__': Eroare la creearea socketului UDP. Detalii:int() argument must be a string, a bytes-like object or a number, not 'NoneType'. Execution aborted!
