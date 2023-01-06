@@ -93,6 +93,7 @@ Both requests and responses must include a payload because of the customized pac
 Payload format
 1. FOR REQUESTS
 1a. FILES
+
 |ID	|OPCODE	|OPERATION	| MSG_TYPE		|ORD_NO_RULE	|OPER_PARAM		|	METHOD
 |---|-------|-----------|---------------|---------------|---------------|---------|
 |1.	|	00	|   UPLOAD	|CONFIRMABLE	|>0 OR =0	|[CONTENT] OR NED|	PUT
