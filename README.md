@@ -210,7 +210,7 @@ A response is identified by the Code field that indicates the result of the atte
 <br>5.00 Internal Server Error
 
 
-<h2>Aplication Structure</h2>
+<h2>Application Structure</h2>
 
 ![generic CoAP server](https://user-images.githubusercontent.com/74203905/211081934-a58c3f03-e772-403e-952b-97818c92fe06.png)
 
