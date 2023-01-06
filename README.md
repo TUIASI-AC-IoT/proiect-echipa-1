@@ -1,16 +1,17 @@
-CoAP
+<h1>CoAP</h1>
 
-Features
+<h2>Features</h2>
+
 1.	Web protocol fulfilling M2M requirements 
 2.	UDP Binding
 3.	Asynchronous message exchanges
 4.	Low header overhead and parsing complexity
 5.	Security binding to Datagram Transport Layer Security (DTLS)
 
-Constrained Application Protocol
+<h2>Constrained Application Protocol</h2>
 The interaction model of CoAP deals with interchanges asynchronously over UDP, but may also be used over Datagram Transport Layer Security (DTLS) or other transports. CoAP defines four types of messages: Confirmable, Non-confirmable, Acknowledgement, Reset.
 
-Request/Response Model
+<h2>Request/Response Model</h2>
 CoAP request and response are carried in CoAP messages, which include either a Method Code or Response Code. Optional information are carried as CoAP options or/and Payload data, as specified by payload package format. A request is carried in a Confirmable (CON) or Non-confirmable (NON) message, and if immediately available, the response to a request carried in a CON message is piggybacked. If the server is not able to respond immediately to a request carried in a CON message, it responds with an Empty ACK message. When the response is ready, the server sends a separate response. If a request is sent in a NON message, then the response is sent using a new NON message. CoAP makes use of GET, PUT, POST, DELETE methods and the implemented JOMAG4 method. 
 
 Message Format
