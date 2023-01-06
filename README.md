@@ -93,12 +93,13 @@ Both requests and responses must include a payload because of the customized pac
 Payload format
 1. FOR REQUESTS
 1a. FILES
-    ID	OPCODE	OPERATION	 MSG_TYPE	ORD_NO_RULE	OPER_PARAM	METHOD
-    1.		00	   UPLOAD	CONFIRMABLE	>0 OR =0	[CONTENT] OR NED	PUT
-    2.		01	   DOWNLOAD	FTC	=0	NED	GET
-    3.		02	   MOVE	FTC	= 0	[NEW_FILEPATH]	POST
-    4.		03	   DELETE	FTC	= 0	NED	DELETE
-    5.		04	   RENAME	FTC	= 0	[NEW_NAME]	JOMAG4
+|ID	|OPCODE	|OPERATION	| MSG_TYPE		|ORD_NO_RULE	|OPER_PARAM		|	METHOD
+|---|-------|-----------|---------------|---------------|---------------|---------|
+|1.	|	00	|   UPLOAD	|CONFIRMABLE	|>0 OR =0	|[CONTENT] OR NED|	PUT
+|2.	|	01	|   DOWNLOAD|FTC			|=0			|	NED			|	GET
+|3.	|	02	|   MOVE	|FTC			|= 0			|[NEW_FILEPATH]	|	POST
+|4.	|	03	|   DELETE	|FTC			|= 0			|	NED			|	DELETE
+|5.	|	04	|   RENAME	|FTC			|= 0			|[NEW_NAME]		|	JOMAG4
 
 1b. DIRECTORIES
     ID	OPCODE	OPERATION	MSG_TYPE	ORD_NO_RULE	OPER_PARAM	METHOD
