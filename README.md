@@ -103,11 +103,13 @@ Payload format
 |5.	|	04	|   RENAME	|FTC			|= 0			|[NEW_NAME]		|	JOMAG4
 
 1b. DIRECTORIES
-    ID	OPCODE	OPERATION	MSG_TYPE	ORD_NO_RULE	OPER_PARAM	METHOD
-    1.		05	CREATE	FTC	= 0	NED	PUT
-    2.		06	MOVE	FTC	= 0	[NEW_PATH]	POST
-    3.		07	DELETE	FTC	= 0	NED	DELETE
-    4.		08	RENAME	FTC	= 0	[NEW_NAME]	JOMAG4
+
+|ID	|OPCODE	|OPERATION	|MSG_TYPE	|ORD_NO_RULE|	OPER_PARAM|	METHOD		|
+| --  | --      |		---	|	----		|   ----  |  ------- |-------- |
+|1.	|	05	|CREATE		|FTC		|= 0		|		NED	  |	PUT			|
+|2.	|	06	|MOVE		|FTC		|= 0		|	[NEW_PATH]|		POST	|
+|3.	|	07	|DELETE		|FTC		|= 0		|	NED	      |      DELETE	|
+|4.	|	08	|RENAME		|FTC		|= 0		|	[NEW_NAME]|		JOMAG4	|
 
 RESPONSES
 FILES
