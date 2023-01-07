@@ -5,8 +5,8 @@
 1.	Web protocol fulfilling M2M requirements 
 2.	UDP Binding
 3.	Asynchronous message exchanges
-4.	Low header overhead and parsing complexity
-5.	Security binding to Datagram Transport Layer Security (DTLS)
+4.	Low header overhead 
+5.	Deduplication and package regrouping
 
 <h2>Constrained Application Protocol</h2>
 The interaction model of CoAP deals with interchanges asynchronously over UDP, but may also be used over Datagram Transport Layer Security (DTLS) or other transports. CoAP defines four types of messages: Confirmable, Non-confirmable, Acknowledgement, Reset.
