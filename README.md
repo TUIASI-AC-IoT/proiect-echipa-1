@@ -194,14 +194,14 @@ A response is identified by the Code field that indicates the result of the atte
 
 <h3>Success 2.xx</h3>
 <br>This class of Response Code indicates that the clients request was successfully received, understood, and accepted.
-<br>2.01 Created - Used in response to POST and PUT requests.
-<br>2.02 Deleted - Used in response to requests that cause the resource to cease being available.
-<br>2.04 Changed - Used in response to POST and PUT requests.
-<br>2.05 Content - Used in response to GET requests. The payload returned with the response is a representation of the target resource.
+<br>2.01 Created - Used in response to PUT requests (upload and create functions).
+<br>2.02 Deleted - Used in response to requests that cause the resource to cease being available (for delete function).
+<br>2.04 Changed - Used in response to POST and JOMAG4 requests (remove and rename functions).
+<br>2.05 Content - Used in response to GET requests. The payload returned with the response is a representation of the target resource (download function).
 
 <h3>Client Error 4.xx</h3>
 <br>This class of Response Code is intended for cases in which the client seems to have erred. These Response Codes are applicable to any request method. 
-<br>4.00 Bad Request
+<br>4.00 Bad Request - The payload format was not applied as specified
 <br>4.02 Bad Option - The request could not be understood by the server due to one or more unrecognized or malformed options. 
 <br>4.04 Not Found
 
