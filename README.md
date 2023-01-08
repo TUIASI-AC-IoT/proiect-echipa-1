@@ -134,7 +134,7 @@ Both requests and responses must include a payload because of the customized pac
 |2.		|01	|DOWNLOAD	|NON|	>0 OR =0	|[CONTENT] OR NED	|GET     |
 |3.		|02	|MOVE		|NON|	 = 0		|NED				|	POST |
 |4.		|03	|DELETE		|NON|	= 0			|NED				|	DELET|
-|5.		|04	|RENAME		|NON|	= 0			|NED				|	JOMAG|
+|5.		|04	|RENAME		|NON|	= 0			|NED				|	JOMAG4|
 
 * DIRECTORIES
 
