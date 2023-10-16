@@ -214,7 +214,7 @@ A response is identified by the Code field that indicates the result of the atte
 
 ![generic CoAP server](https://user-images.githubusercontent.com/74203905/211081934-a58c3f03-e772-403e-952b-97818c92fe06.png)
 
-<h2>Bibliografie</h2>
+<h2>Bibliography</h2>
 
 1. RFC 7252: The Constrained Application Protocol (CoAP) - https://www.rfc-editor.org/rfc/rfc7252
 2. Python documentation - https://docs.python.org/3/
